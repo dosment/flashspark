@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -8,9 +9,9 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Helper function to check if the user is an admin
-    function isAdmin() {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    // Helper function to check if the user is a parent
+    function isParent() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'parent';
     }
 
     // Helper function to check if the user is a child
@@ -19,17 +20,17 @@ service cloud.firestore {
     }
 
     // Users can read/update their own profile.
-    // New users can be created during sign-up.
+    // New users can be created by a parent.
     match /users/{userId} {
       allow read, update: if isSignedIn() && request.auth.uid == userId;
-      allow create: if isSignedIn();
+      allow create: if isParent();
     }
     
     // Quizzes can be read by any authenticated user (so children can see them).
-    // Quizzes can only be created or modified by admins.
+    // Quizzes can only be created or modified by parents.
     match /quizzes/{quizId} {
       allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if isParent();
     }
 
     // Preloaded quizzes can be read by any authenticated user.
@@ -44,8 +45,7 @@ service cloud.firestore {
     match /quizAttempts/{attemptId} {
        allow create: if isSignedIn();
        allow read: if isSignedIn() && 
-                      (request.auth.uid == resource.data.userId || 
-                       get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+                      (request.auth.uid == resource.data.userId || isParent());
       // Attempts should not be updatable or deletable from the client.
       allow update, delete: if false;
     }
