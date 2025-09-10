@@ -36,10 +36,14 @@ function ProfileTab() {
             setIsFetchingAchievements(false);
             return;
         };
+        console.log('[ProfileTab] Fetching achievements for child user.');
         setIsFetchingAchievements(true);
         const result = await getDashboardDataAction();
         if (result.achievements) {
             setAchievements(result.achievements);
+            console.log(`[ProfileTab] Found ${result.achievements.length} achievements.`);
+        } else {
+             console.error('[ProfileTab] Error fetching achievements:', result.error);
         }
         setIsFetchingAchievements(false);
     }
@@ -48,6 +52,7 @@ function ProfileTab() {
 
   const handleSelectAvatar = async (avatarId: string) => {
     if (!user || isSaving) return;
+    console.log(`[ProfileTab] User ${user.uid} selected new avatar: ${avatarId}`);
     setIsSaving(true);
     try {
         await updateUserProfile(user.uid, { avatarId });
@@ -55,7 +60,9 @@ function ProfileTab() {
             title: "Avatar Updated!",
             description: "Your new avatar has been saved.",
         });
+         console.log(`[ProfileTab] Avatar updated successfully.`);
     } catch (error) {
+         console.error(`[ProfileTab] Error updating avatar:`, error);
         toast({
             variant: "destructive",
             title: "Save Failed",
@@ -185,11 +192,14 @@ function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
   const { toast } = useToast();
 
   const fetchUsers = useCallback(async () => {
+    console.log('[UserManagementTab] Fetching managed users...');
     setIsLoading(true);
     const result = await getManagedUsersAction();
     if (result.error) {
+      console.error('[UserManagementTab] Error fetching users:', result.error);
       toast({ variant: 'destructive', title: 'Error', description: result.error });
     } else if (result.children) {
+      console.log(`[UserManagementTab] Found ${result.children.length} managed users.`);
       setUsers({ children: result.children });
     }
     setIsLoading(false);
@@ -200,8 +210,9 @@ function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
   }, [fetchUsers]);
   
   const handleUserAdded = () => {
-      fetchUsers(); // Re-fetch users for this component
-      onUsersChanged(); // Trigger re-fetch on the dashboard
+      console.log('[UserManagementTab] User added/changed, triggering refetch.');
+      fetchUsers();
+      onUsersChanged();
   }
 
   const { children } = users;
@@ -271,10 +282,12 @@ export default function SettingsPage() {
 
   // This is a dummy function for now, but can be used to trigger dashboard refresh
   const handleUsersChanged = useCallback(() => {
-    // This could be implemented with a global state manager or context
-    // to trigger a re-fetch on the dashboard page. For now, we'll
-    // rely on the user navigating back to the dashboard to see changes.
-    console.log("A user was added/changed, dashboard data should be refreshed.");
+    // This callback is currently a placeholder to show how you would
+    // trigger a refresh on another component. In a real-world scenario
+    // with a more complex state management (like Zustand or Redux),
+    // this would dispatch a global action to refetch dashboard data.
+    // For our current setup, the effect is handled within the UserManagementTab itself.
+    console.log("[SettingsPage] A user was added/changed, dashboard data should be refreshed if it were visible.");
   }, []);
 
   useEffect(() => {
@@ -293,6 +306,7 @@ export default function SettingsPage() {
       </div>
     );
   }
+   console.log(`[SettingsPage] Rendering settings for user ${user.uid} with role ${user.role}`);
 
   return (
     <div className="flex flex-col min-h-screen">

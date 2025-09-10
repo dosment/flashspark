@@ -7,7 +7,6 @@ import {
   useEffect,
   useState,
   ReactNode,
-  useCallback,
 } from 'react';
 import {
   onAuthStateChanged,
@@ -24,14 +23,17 @@ import { useToast } from './use-toast';
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 async function createUserProfile(firebaseUser: FirebaseAuthUser): Promise<AppUser> {
+    console.log(`[AUTH] Creating new user profile for UID: ${firebaseUser.uid}`);
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     const userDoc = await getDoc(userDocRef);
 
     if (userDoc.exists()) {
+        console.log(`[AUTH] User profile already exists for UID: ${firebaseUser.uid}. Returning existing data.`);
         return userDoc.data() as AppUser;
     }
     
     // New users always default to admin (parent) role.
+    console.log(`[AUTH] No existing profile. Creating new user with 'admin' role.`);
     const newUser: AppUser = {
         uid: firebaseUser.uid,
         email: firebaseUser.email!.toLowerCase(),
@@ -40,6 +42,7 @@ async function createUserProfile(firebaseUser: FirebaseAuthUser): Promise<AppUse
     };
     
     await setDoc(userDocRef, newUser);
+    console.log(`[AUTH] New user profile created and saved to Firestore.`);
     return newUser;
 }
 
@@ -51,27 +54,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   
   useEffect(() => {
+    console.log('[AUTH] AuthProvider mounted. Setting up onAuthStateChanged listener.');
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+        setLoading(true);
+        console.log(`[AUTH] onAuthStateChanged triggered. Firebase user: ${fbUser ? fbUser.uid : 'null'}`);
         setFirebaseUser(fbUser);
+
         if (fbUser) {
             try {
+                console.log('[AUTH] User is logged in. Fetching ID token and setting session cookie.');
                 const idToken = await fbUser.getIdToken();
                 await fetch('/api/auth/session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ idToken }),
                 });
+                console.log('[AUTH] Session cookie set. Setting up Firestore profile listener.');
 
                 const userDocRef = doc(db, 'users', fbUser.uid);
                 const unsubProfile = onSnapshot(userDocRef, async (userDoc) => {
+                    console.log(`[AUTH] Profile snapshot received for UID: ${fbUser.uid}. Document exists: ${userDoc.exists()}`);
                     if (userDoc.exists()) {
                         setUser(userDoc.data() as AppUser);
+                        console.log('[AUTH] AppUser state updated with profile data:', userDoc.data());
                     } else {
+                        console.log('[AUTH] Profile does not exist, creating it...');
                         const userProfile = await createUserProfile(fbUser);
                         setUser(userProfile);
+                        console.log('[AUTH] AppUser state updated with new profile.');
                     }
                 }, (error) => {
-                    console.error("Error in profile snapshot listener:", error);
+                    console.error("[AUTH] Error in profile snapshot listener:", error);
                     toast({
                         variant: 'destructive',
                         title: 'Connection Error',
@@ -81,10 +94,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 });
                 
                 setLoading(false);
-                return () => unsubProfile();
+                return () => {
+                    console.log('[AUTH] Cleaning up profile snapshot listener.');
+                    unsubProfile();
+                };
 
             } catch (error: any) {
-                console.error('Auth State Change Error:', error);
+                console.error('[AUTH] Auth State Change Error:', error);
                 toast({
                     variant: 'destructive',
                     title: 'Authentication Error',
@@ -94,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setLoading(false);
             }
         } else {
+            console.log('[AUTH] User is logged out. Deleting session cookie and clearing user state.');
             await fetch('/api/auth/session', { method: 'DELETE' });
             setUser(null);
             setFirebaseUser(null);
@@ -101,16 +118,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     });
 
-    return () => unsubscribe();
+    return () => {
+        console.log('[AUTH] Cleaning up onAuthStateChanged listener.');
+        unsubscribe();
+    }
   }, [toast]);
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     setLoading(true);
+    console.log('[AUTH] Attempting to sign in with Google...');
     try {
       await signInWithPopup(auth, provider);
+      console.log('[AUTH] Google Sign-In successful.');
+      // onAuthStateChanged will handle the rest
     } catch (error: any) {
-        console.error("Google Sign-In Error:", error);
+        console.error("[AUTH] Google Sign-In Error:", error);
         toast({
           variant: 'destructive',
           title: 'Login Failed',
@@ -122,8 +145,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logOut = (): Promise<void> => {
     setLoading(true);
+    console.log('[AUTH] Logging out...');
     return signOut(auth);
-    // The onAuthStateChanged listener will handle the rest
+    // The onAuthStateChanged listener will handle clearing local state.
   };
 
   const value: AuthContextType = {

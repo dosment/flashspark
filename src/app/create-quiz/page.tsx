@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, Suspense, useEffect } from 'react';
@@ -39,21 +40,24 @@ function CreateQuizPageContent() {
   
   useEffect(() => {
     if (isAiMode) {
+      console.log('[CreateQuiz] AI mode detected from URL');
       setActiveView('aiTopic');
       setQuizType('vocabulary');
     }
   }, [isAiMode]);
 
   useEffect(() => {
-    // We still redirect on the client-side as a UX convenience,
-    // but the critical security check is now on the server action.
-    if (!loading && (!user || user.role !== 'admin')) {
+    // This is a client-side convenience redirect.
+    // The critical security check is on the server action.
+    if (!loading && user && user.role !== 'admin') {
+      console.warn('[CreateQuiz] Non-admin user detected, redirecting to dashboard.');
       router.push('/dashboard');
     }
   }, [user, loading, router]);
 
   const handleAddFlashcard = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[CreateQuiz] Adding flashcard manually.');
     if (question && answer && options.every(opt => opt.trim() !== '')) {
       const newFlashcard: Flashcard = {
         question,
@@ -61,9 +65,12 @@ function CreateQuizPageContent() {
         options: [...options, answer], 
       };
       setFlashcards([...flashcards, newFlashcard]);
+      console.log('[CreateQuiz] Flashcard added, resetting form.');
       setQuestion('');
       setAnswer('');
       setOptions(['', '', '']);
+    } else {
+        console.warn('[CreateQuiz] Add flashcard validation failed.');
     }
   };
   
@@ -71,6 +78,7 @@ function CreateQuizPageContent() {
     e.preventDefault();
     if (!aiTopic) return;
     setIsGenerating(true);
+    console.log(`[CreateQuiz] Generating flashcards from topic: "${aiTopic}"`);
     setQuizTitle(aiTopic);
     setQuizType('vocabulary');
 
@@ -86,6 +94,7 @@ function CreateQuizPageContent() {
             age--;
         }
     }
+    console.log('[CreateQuiz] AI generation params:', { topic: aiTopic, gradeLevel, age });
 
     try {
       const result = await generateFlashcards({ 
@@ -96,9 +105,10 @@ function CreateQuizPageContent() {
       });
       setFlashcards(result.flashcards);
       setActiveView('manual'); // Hide generation UI
+      console.log(`[CreateQuiz] AI generation successful, ${result.flashcards.length} flashcards created.`);
       toast({ title: "AI Complete!", description: `Generated ${result.flashcards.length} flashcards about ${aiTopic}.` });
     } catch (error) {
-      console.error("Failed to generate flashcards", error);
+      console.error("[CreateQuiz] Failed to generate flashcards from topic", error);
       toast({ variant: "destructive", title: "AI Generation Failed", description: "Could not generate flashcards. Please try again." });
     }
     setIsGenerating(false);
@@ -108,6 +118,7 @@ function CreateQuizPageContent() {
     e.preventDefault();
     if (!aiText) return;
     setIsGenerating(true);
+    console.log(`[CreateQuiz] Generating flashcards from text.`);
     setQuizTitle('Quiz from My Notes');
     setQuizType('standard');
 
@@ -118,9 +129,10 @@ function CreateQuizPageContent() {
       });
       setFlashcards(result.flashcards);
       setActiveView('manual'); // Hide generation UI
+       console.log(`[CreateQuiz] AI generation from text successful, ${result.flashcards.length} flashcards created.`);
       toast({ title: "AI Complete!", description: `Generated ${result.flashcards.length} flashcards from your text.` });
     } catch (error) {
-      console.error("Failed to generate flashcards from text", error);
+      console.error("[CreateQuiz] Failed to generate flashcards from text", error);
       toast({ variant: "destructive", title: "AI Generation Failed", description: "Could not generate flashcards. Please try again." });
     }
     setIsGenerating(false);
@@ -129,15 +141,19 @@ function CreateQuizPageContent() {
 
   const handleSaveQuiz = async () => {
     if (flashcards.length === 0 || !quizTitle) {
+        console.warn('[CreateQuiz] Save validation failed: No flashcards or title.');
         toast({ variant: "destructive", title: "Cannot Save Quiz", description: "Please add at least one flashcard and a title." });
         return;
     }
     setIsSaving(true);
+    console.log(`[CreateQuiz] Saving quiz with title: "${quizTitle}"`);
     const result = await saveQuizAction({ title: quizTitle, flashcards, quizType });
     if (result.success) {
+        console.log(`[CreateQuiz] Quiz saved successfully with id: ${result.quizId}`);
         toast({ title: "Quiz Saved!", description: "Your new quiz has been saved to your dashboard." });
         router.push('/dashboard');
     } else {
+        console.error(`[CreateQuiz] Save failed:`, result.error);
         toast({ variant: "destructive", title: "Save Failed", description: result.error });
     }
     setIsSaving(false);
@@ -150,10 +166,11 @@ function CreateQuizPageContent() {
   };
 
   const removeFlashcard = (index: number) => {
+    console.log(`[CreateQuiz] Removing flashcard at index: ${index}`);
     setFlashcards(flashcards.filter((_, i) => i !== index));
   };
   
-  if (loading || !user || user.role !== 'admin') {
+  if (loading || !user) {
     return (
        <div className="flex flex-col items-center justify-center min-h-screen text-center">
         <LoaderCircle className="w-12 h-12 animate-spin text-primary mb-4" />

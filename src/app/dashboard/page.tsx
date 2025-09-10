@@ -49,12 +49,15 @@ function AdminDashboard({ user }: { user: AppUser }) {
     const { toast } = useToast();
 
     const fetchDashboardData = useCallback(async () => {
+        console.log('[AdminDashboard] Fetching dashboard data...');
         setIsLoading(true);
         const result = await getDashboardDataAction();
         if (result.error) {
+            console.error('[AdminDashboard] Error fetching data:', result.error);
             toast({ variant: 'destructive', title: 'Error', description: result.error });
             setData({ children: [], quizzes: [] });
         } else {
+            console.log('[AdminDashboard] Data fetched successfully:', result);
             setData({ 
                 children: (result.children as ChildWithAttempts[]) || [], 
                 quizzes: result.quizzes || [] 
@@ -201,13 +204,16 @@ function ChildDashboard({ user }: { user: AppUser }) {
 
     useEffect(() => {
         const fetchDashboardData = async () => {
+            console.log('[ChildDashboard] Fetching dashboard data...');
             setIsFetching(true);
             const result = await getDashboardDataAction();
     
             if (result.error) {
+                console.error('[ChildDashboard] Error fetching data:', result.error);
                 toast({ variant: 'destructive', title: 'Error', description: result.error });
                  setData({ quizzes: [], achievements: [] });
             } else {
+                console.log('[ChildDashboard] Data fetched successfully:', result);
                 setData({
                     quizzes: result.quizzes || [],
                     achievements: result.achievements || []
@@ -215,6 +221,7 @@ function ChildDashboard({ user }: { user: AppUser }) {
             }
             
             if (user.role === 'child' && !user.parentId && (!result.quizzes || result.quizzes.length === 0)) {
+                console.log('[ChildDashboard] Standalone child detected, showing welcome toast.');
                 toast({ variant: 'default', title: 'Welcome!', description: 'Please ask your parent to add you to their account to see quizzes.' });
             }
 
@@ -316,6 +323,7 @@ export default function DashboardPage() {
   
   useEffect(() => {
     if (!loading && !user) {
+      console.log('[DashboardPage] No user found, redirecting to login.');
       router.push('/login');
     }
   }, [user, loading, router]);
@@ -331,6 +339,7 @@ export default function DashboardPage() {
     );
   }
 
+  console.log(`[DashboardPage] Rendering dashboard for user ${user.uid} with role ${user.role}`);
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
