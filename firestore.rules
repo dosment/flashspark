@@ -22,7 +22,7 @@ service cloud.firestore {
     // New users can be created during sign-up.
     match /users/{userId} {
       allow read, update: if isSignedIn() && request.auth.uid == userId;
-      allow create: if true; // Allow user creation for sign-up and for parents adding children
+      allow create: if isSignedIn(); // Allow user creation for sign-up and for parents adding children
     }
     
     // Quizzes can be read by any authenticated user (so children can see them).
@@ -54,12 +54,6 @@ service cloud.firestore {
     match /userAchievements/{achievementId} {
         allow read: if isSignedIn();
         allow write: if false; // Achievements are awarded by server-side logic only
-    }
-
-    // User achievements can be read by anyone, but only created via server-side logic
-    match /userAchievements/{achievementId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if false;
     }
   }
 }
