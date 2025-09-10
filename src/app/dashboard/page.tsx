@@ -7,13 +7,12 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, PlusCircle, Play, Eye, BookOpen } from 'lucide-react';
+import { LoaderCircle, PlusCircle, Play, Eye, BookOpen, User } from 'lucide-react';
 import { getDashboardDataAction } from '@/app/actions';
 import type { Quiz, AppUser, QuizAttempt, QuizType, UserAchievement } from '@/lib/types';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AddChildDialog } from '@/components/AddChildDialog';
 import { AddParentDialog } from '@/components/AddParentDialog';
 import ScienceIcon from '@/components/icons/ScienceIcon';
@@ -127,11 +126,16 @@ function AdminDashboard({ user }: { user: AppUser }) {
                         </CardContent>
                     </Card>
                 ) : (
-                    <Accordion type="single" collapsible className="w-full">
+                    <div className="space-y-4">
                         {data.children.map(child => (
-                            <AccordionItem value={child.uid} key={child.uid}>
-                                <AccordionTrigger className="text-xl font-headline">{child.email}</AccordionTrigger>
-                                <AccordionContent>
+                           <Card key={child.uid}>
+                               <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 font-headline">
+                                        <User className="text-primary"/>
+                                        {child.email}
+                                    </CardTitle>
+                               </CardHeader>
+                               <CardContent>
                                     {child.attempts.length > 0 ? (
                                         <div className="space-y-2">
                                             <h4 className="font-semibold">Recent Quiz History:</h4>
@@ -147,10 +151,10 @@ function AdminDashboard({ user }: { user: AppUser }) {
                                     ) : (
                                         <p className="text-muted-foreground">No quiz attempts recorded yet.</p>
                                     )}
-                                </AccordionContent>
-                            </AccordionItem>
+                               </CardContent>
+                           </Card>
                         ))}
-                    </Accordion>
+                    </div>
                 )}
             </div>
         </div>
@@ -302,3 +306,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
