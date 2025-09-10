@@ -7,7 +7,7 @@ import {
     getQuizzesForUser, 
     getQuiz,
     getChildrenForParent,
-    getAdmins,
+    getParents,
     getQuizAttemptsForUser,
     saveQuizAttempt as saveQuizAttemptToDb,
     setUserParent,
@@ -42,8 +42,8 @@ export async function saveQuizAction(quizData: { title: string; flashcards: any[
         console.error('[ACTION] saveQuizAction: Error - User not logged in.');
         return { error: 'You must be logged in to save a quiz.' };
     }
-     if (currentUser.role !== 'admin') {
-        console.error(`[ACTION] saveQuizAction: Error - User ${currentUser.uid} with role ${currentUser.role} is not an admin.`);
+     if (currentUser.role !== 'parent') {
+        console.error(`[ACTION] saveQuizAction: Error - User ${currentUser.uid} with role ${currentUser.role} is not a parent.`);
         return { error: 'Only parents can create quizzes.' };
     }
 
@@ -110,8 +110,8 @@ export async function getDashboardDataAction() {
     console.log(`[ACTION] getDashboardDataAction: Fetching data for user ${user.uid} with role ${user.role}`);
 
     try {
-        if (user.role === 'admin') {
-            console.log('[ACTION] getDashboardDataAction: Admin path');
+        if (user.role === 'parent') {
+            console.log('[ACTION] getDashboardDataAction: Parent path');
             const [children, quizzes] = await Promise.all([
                 getChildrenForParent(user.uid),
                 getQuizzesForUser(user.uid)
@@ -125,7 +125,7 @@ export async function getDashboardDataAction() {
                 })
             );
             const result = { children: childrenWithAttempts, quizzes };
-            console.log('[ACTION] getDashboardDataAction: Admin data prepared successfully.');
+            console.log('[ACTION] getDashboardDataAction: Parent data prepared successfully.');
             return result;
         } else { // Child user
             console.log('[ACTION] getDashboardDataAction: Child path');
@@ -156,21 +156,21 @@ export async function getDashboardDataAction() {
 export async function getManagedUsersAction() {
     console.log('[ACTION] getManagedUsersAction: Triggered');
     const user = await getCurrentUser();
-    if (!user || user.role !== 'admin') {
-        console.error('[ACTION] getManagedUsersAction: Error - Not an admin or not logged in.');
-        return { error: 'You must be an admin to manage users.' };
+    if (!user || user.role !== 'parent') {
+        console.error('[ACTION] getManagedUsersAction: Error - Not an parent or not logged in.');
+        return { error: 'You must be an parent to manage users.' };
     }
     try {
-        console.log('[ACTION] getManagedUsersAction: Fetching children and admins for parent:', user.uid);
-        const [children, admins] = await Promise.all([
+        console.log('[ACTION] getManagedUsersAction: Fetching children and parents for parent:', user.uid);
+        const [children, parents] = await Promise.all([
             getChildrenForParent(user.uid),
-            getAdmins()
+            getParents()
         ]);
-        // Filter out the current user from the admins list
-        const otherAdmins = admins.filter(admin => admin.uid !== user.uid);
+        // Filter out the current user from the parents list
+        const otherParents = parents.filter(parent => parent.uid !== user.uid);
 
-        console.log(`[ACTION] getManagedUsersAction: Success, found ${children.length} children and ${otherAdmins.length} other admins.`);
-        return { children, admins: otherAdmins };
+        console.log(`[ACTION] getManagedUsersAction: Success, found ${children.length} children and ${otherParents.length} other parents.`);
+        return { children, parents: otherParents };
     } catch (error) {
         console.error('[ACTION] getManagedUsersAction: Error fetching managed users', error);
         return { error: 'Could not fetch managed users.' };
@@ -195,8 +195,8 @@ export async function saveQuizAttemptAction(attemptData: Omit<QuizAttempt, 'id' 
 export async function addChildAction(childData: { email: string; name: string; gradeLevel: string; dateOfBirth: string; }) {
     console.log('[ACTION] addChildAction: Triggered for email:', childData.email);
     const parent = await getCurrentUser();
-    if (!parent || parent.role !== 'admin') {
-        console.error('[ACTION] addChildAction: Error - Not an admin or not logged in.');
+    if (!parent || parent.role !== 'parent') {
+        console.error('[ACTION] addChildAction: Error - Not an parent or not logged in.');
         return { error: 'Only parents can add children.' };
     }
 
@@ -210,8 +210,8 @@ export async function addChildAction(childData: { email: string; name: string; g
 
         if (existingUser) {
             console.log(`[ACTION] addChildAction: Found existing user with email ${childData.email}. UID: ${existingUser.uid}`);
-            if (existingUser.role === 'admin') {
-                return { error: 'This user is an admin and cannot be added as a child.' };
+            if (existingUser.role === 'parent') {
+                return { error: 'This user is a parent and cannot be added as a child.' };
             }
             if (existingUser.parentId) {
                 return { error: 'This child is already assigned to a parent.' };
@@ -253,21 +253,21 @@ export async function addChildAction(childData: { email: string; name: string; g
 export async function addParentAction(parentEmail: string) {
     console.log('[ACTION] addParentAction: Triggered for email:', parentEmail);
     const currentUser = await getCurrentUser();
-    if (!currentUser || currentUser.role !== 'admin') {
-        console.error('[ACTION] addParentAction: Error - Not an admin or not logged in.');
+    if (!currentUser || currentUser.role !== 'parent') {
+        console.error('[ACTION] addParentAction: Error - Not a parent or not logged in.');
         return { error: 'Only parents can add other parents.' };
     }
 
     if (parentEmail.toLowerCase() === currentUser.email?.toLowerCase()) {
-        console.error('[ACTION] addParentAction: Error - Admin cannot add self.');
+        console.error('[ACTION] addParentAction: Error - Parent cannot add self.');
         return { error: 'You cannot add yourself as a parent again.' };
     }
 
     try {
-        console.log(`[ACTION] addParentAction: Creating user with email: ${parentEmail} and promoting to admin.`);
+        console.log(`[ACTION] addParentAction: Creating user with email: ${parentEmail} and promoting to parent.`);
         const newUser = await createUser({
             email: parentEmail,
-            role: 'admin'
+            role: 'parent'
         });
         console.log(`[ACTION] addParentAction: Successfully created and promoted user.`);
         return { success: true, user: newUser };

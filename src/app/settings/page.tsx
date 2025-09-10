@@ -94,7 +94,7 @@ function ProfileTab() {
                     )}
                     <CardTitle className="text-3xl">{user.name || user.email}</CardTitle>
                     <div className="flex items-center gap-2">
-                       <Badge className='capitalize' variant={user.role === 'admin' ? 'default' : 'secondary'}>{user.role}</Badge>
+                       <Badge className='capitalize' variant={user.role === 'parent' ? 'default' : 'secondary'}>{user.role}</Badge>
                        {user.gradeLevel && <Badge variant="outline">{user.gradeLevel}</Badge>}
                     </div>
                 </CardHeader>
@@ -187,7 +187,7 @@ function ProfileTab() {
 
 
 function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
-  const [users, setUsers] = useState<{ children: AppUser[], admins: AppUser[] }>({ children: [], admins: [] });
+  const [users, setUsers] = useState<{ children: AppUser[], parents: AppUser[] }>({ children: [], parents: [] });
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -199,8 +199,8 @@ function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
       console.error('[UserManagementTab] Error fetching users:', result.error);
       toast({ variant: 'destructive', title: 'Error', description: result.error });
     } else {
-      console.log(`[UserManagementTab] Found ${result.children?.length || 0} children and ${result.admins?.length || 0} admins.`);
-      setUsers({ children: result.children || [], admins: result.admins || [] });
+      console.log(`[UserManagementTab] Found ${result.children?.length || 0} children and ${result.parents?.length || 0} parents.`);
+      setUsers({ children: result.children || [], parents: result.parents || [] });
     }
     setIsLoading(false);
   }, [toast]);
@@ -215,7 +215,7 @@ function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
       onUsersChanged();
   }
 
-  const { children, admins } = users;
+  const { children, parents } = users;
 
   const UserListItem = ({ user }: { user: AppUser }) => {
     const UserAvatar = getAvatar(user.avatarId);
@@ -291,14 +291,14 @@ function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
              <div className="flex justify-center items-center p-4">
                 <LoaderCircle className="animate-spin text-primary" />
             </div>
-          ) : admins.length > 0 ? (
+          ) : parents.length > 0 ? (
             <div className="border rounded-md divide-y">
-                {admins.map((admin) => <UserListItem key={admin.uid} user={admin} />)}
+                {parents.map((parent) => <UserListItem key={parent.uid} user={parent} />)}
             </div>
           ) : (
             <div className="text-center text-sm text-muted-foreground p-8 border rounded-md border-dashed">
                 <p>You are the only parent in this group.</p>
-                <p>Click "Add Parent" to invite another admin.</p>
+                <p>Click "Add Parent" to invite another parent.</p>
             </div>
           )}
         </div>
@@ -340,7 +340,7 @@ export default function SettingsPage() {
       <main className="flex-grow container mx-auto px-4 py-8 md:py-12">
         <h1 className="text-3xl font-bold font-headline mb-8">Settings</h1>
 
-        {user.role === 'admin' ? (
+        {user.role === 'parent' ? (
            <Tabs defaultValue="profile" className="w-full">
             <TabsList className="grid w-full grid-cols-2 max-w-md">
               <TabsTrigger value="profile"><User className='mr-2'/> Profile</TabsTrigger>

@@ -82,7 +82,7 @@ export function AddParentDialog({ onParentAdded }: { onParentAdded: () => void }
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={isAdding}>
+            <Button type="submit" disabled={isAdding} className="w-full">
               {isAdding ? (
                 <>
                   <LoaderCircle className="animate-spin mr-2" />

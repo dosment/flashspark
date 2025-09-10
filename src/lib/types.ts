@@ -31,7 +31,7 @@ export type Quiz = {
 export type AppUser = {
     uid: string;
     email: string | null;
-    role: 'admin' | 'child';
+    role: 'parent' | 'child';
     name?: string;
     parentId?: string; // ID of the parent (admin) user for children
     gradeLevel?: string;

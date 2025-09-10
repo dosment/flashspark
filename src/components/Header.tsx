@@ -35,7 +35,7 @@ export default function Header() {
       return <Skeleton className="h-10 w-24" />;
     }
     if (user) {
-      if (user.role === 'admin') {
+      if (user.role === 'parent') {
         return (
           <>
             <Button asChild>

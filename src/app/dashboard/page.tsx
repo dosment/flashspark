@@ -41,21 +41,21 @@ const getQuizIcon = (quizType: QuizType, title: string) => {
 }
 
 
-function AdminDashboard({ user }: { user: AppUser }) {
+function ParentDashboard({ user }: { user: AppUser }) {
     const [data, setData] = useState<{ children: ChildWithAttempts[], quizzes: Quiz[] }>({ children: [], quizzes: [] });
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
 
     const fetchDashboardData = useCallback(async () => {
-        console.log('[AdminDashboard] Fetching dashboard data...');
+        console.log('[ParentDashboard] Fetching dashboard data...');
         setIsLoading(true);
         const result = await getDashboardDataAction();
         if (result.error) {
-            console.error('[AdminDashboard] Error fetching data:', result.error);
+            console.error('[ParentDashboard] Error fetching data:', result.error);
             toast({ variant: 'destructive', title: 'Error', description: result.error });
             setData({ children: [], quizzes: [] });
         } else {
-            console.log('[AdminDashboard] Data fetched successfully:', result);
+            console.log('[ParentDashboard] Data fetched successfully:', result);
             setData({ 
                 children: (result.children as ChildWithAttempts[]) || [], 
                 quizzes: result.quizzes || [] 
@@ -329,12 +329,11 @@ export default function DashboardPage() {
   
   useEffect(() => {
     if (!loading && !user) {
-      console.log('[DashboardPage] No user found, redirecting to login.');
       router.push('/login');
     }
   }, [user, loading, router]);
 
-  if (loading || !user) {
+  if (loading) {
     return (
        <div className="flex flex-col items-center justify-center min-h-screen text-center">
         <LoaderCircle className="w-12 h-12 animate-spin text-primary mb-4" />
@@ -345,14 +344,24 @@ export default function DashboardPage() {
     );
   }
 
+  if (!user) {
+    // This case should be rare due to the useEffect redirect, but it's a good failsafe.
+    return (
+       <div className="flex flex-col items-center justify-center min-h-screen text-center">
+        <h1 className="text-2xl font-bold font-headline text-destructive">
+          Redirecting to login...
+        </h1>
+      </div>
+    );
+  }
+
   console.log(`[DashboardPage] Rendering dashboard for user ${user.uid} with role ${user.role}`);
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8 md:py-12">
-        {user.role === 'admin' ? <AdminDashboard user={user} /> : <ChildDashboard user={user} />}
+        {user.role === 'parent' ? <ParentDashboard user={user} /> : <ChildDashboard user={user} />}
       </main>
     </div>
   );
 }
- 

@@ -47,14 +47,12 @@ function CreateQuizPageContent() {
   }, [isAiMode]);
 
   useEffect(() => {
-    // This is a client-side convenience redirect.
-    // The critical security check is on the server action.
-    if (!loading && user?.role !== 'admin') {
-      console.warn('[CreateQuiz] Non-admin user detected, redirecting to dashboard.');
+    // Redirect if not a parent/admin after loading completes
+    if (!loading && user?.role !== 'parent') {
       router.push('/dashboard');
     }
   }, [user, loading, router]);
-
+  
   const handleAddFlashcard = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('[CreateQuiz] Adding flashcard manually.');
@@ -177,6 +175,19 @@ function CreateQuizPageContent() {
         <h1 className="text-2xl font-bold font-headline text-primary-foreground">
           Loading...
         </h1>
+      </div>
+    );
+  }
+
+   if (user.role !== 'parent') {
+    return (
+       <div className="flex flex-col items-center justify-center min-h-screen text-center">
+        <h1 className="text-2xl font-bold font-headline text-destructive">
+          Access Denied
+        </h1>
+        <p className="text-muted-foreground mt-2">
+            Only parents can create quizzes. Redirecting to dashboard...
+        </p>
       </div>
     );
   }
@@ -372,5 +383,3 @@ export default function CreateQuizPage() {
     </Suspense>
   )
 }
-
-    

@@ -12,11 +12,11 @@ const db = getFirestoreAdmin();
 const auth = adminAuth(getFirebaseAdminApp());
 
 
-export async function createUser(userData: {email: string, name?: string, role: 'admin' | 'child', parentId?: string, gradeLevel?: string, dateOfBirth?: string}): Promise<AppUser> {
+export async function createUser(userData: {email: string, name?: string, role: 'parent' | 'child', parentId?: string, gradeLevel?: string, dateOfBirth?: string}): Promise<AppUser> {
     console.log('[DB] createUser: Creating Firebase Auth user for email:', userData.email);
     const authUser = await auth.createUser({
         email: userData.email,
-        emailVerified: true, // Since we trust the admin creating the account
+        emailVerified: true, // Since we trust the parent creating the account
         displayName: userData.name,
     });
     console.log('[DB] createUser: Firebase Auth user created successfully, UID:', authUser.uid);
@@ -146,10 +146,10 @@ export async function getChildrenForParent(parentId: string): Promise<AppUser[]>
     return users;
 }
 
-// Get all admins/parents
-export async function getAdmins(): Promise<AppUser[]> {
+// Get all parents/parents
+export async function getParents(): Promise<AppUser[]> {
     const users: AppUser[] = [];
-    const q = db.collection('users').where('role', '==', 'admin');
+    const q = db.collection('users').where('role', '==', 'parent');
     const querySnapshot = await q.get();
 
     for (const doc of querySnapshot.docs) {
@@ -196,11 +196,11 @@ export async function saveQuizAttempt(attemptData: Omit<QuizAttempt, 'id' | 'com
 }
 
 
-export async function setUserRole(uid: string, role: 'admin' | 'child'): Promise<void> {
+export async function setUserRole(uid: string, role: 'parent' | 'child'): Promise<void> {
     const userDocRef = db.collection('users').doc(uid);
-    const updateData: { role: 'admin' | 'child'; parentId?: FieldValue } = { role };
+    const updateData: { role: 'parent' | 'child'; parentId?: FieldValue } = { role };
 
-    if (role === 'admin') {
+    if (role === 'parent') {
         updateData.parentId = FieldValue.delete();
     }
     
