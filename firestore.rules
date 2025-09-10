@@ -40,7 +40,11 @@ service cloud.firestore {
     }
     
     match /quizzes/{quizId} {
-      allow read: if isSignedIn();
+      // Admins can read any quiz. Owners can read their own quizzes. 
+      // Children can read quizzes owned by their parents.
+      allow read: if isAdmin() || 
+                     (isSignedIn() && request.auth.uid == resource.data.ownerId) || 
+                     (isChild() && resource.data.ownerId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.parentIds);
       // Parents and Admins can manage quizzes.
       allow create, update, delete: if isParent() || isAdmin();
     }

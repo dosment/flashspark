@@ -35,6 +35,7 @@ export type Quiz = {
   userId: string; // The ID of the parent who created it
   quizType: QuizType;
   createdAt: Timestamp;
+  assignedTo?: string[];
 };
 
 export type AppUser = {

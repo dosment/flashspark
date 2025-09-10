@@ -35,6 +35,9 @@ export async function generateFlashcards(input: GenerateFlashcardsInput): Promis
   return generateFlashcardsFlow(input);
 }
 
+// QA Note: The following prompt instructs the AI to generate distractors.
+// This is more efficient than querying the database for each question to find distractors.
+// The AI is responsible for generating plausible distractors based on the topic and question.
 const generateFlashcardsPrompt = ai.definePrompt({
   name: 'generateFlashcardsPrompt',
   input: {schema: GenerateFlashcardsInputSchema},
