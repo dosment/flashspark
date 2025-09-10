@@ -163,25 +163,16 @@ function ChildDashboard({ user }: { user: AppUser }) {
     useEffect(() => {
         const fetchDashboardData = async () => {
             setIsFetching(true);
-            const [dashboardResult, quizzesResult] = await Promise.all([
-                getDashboardDataAction(),
-                getQuizzesAction()
-            ]);
+            const result = await getDashboardDataAction();
     
-            if (dashboardResult.quizzes) setQuizzes(dashboardResult.quizzes);
-            if (dashboardResult.achievements) setAchievements(dashboardResult.achievements);
+            if (result.quizzes) setQuizzes(result.quizzes);
+            if (result.achievements) setAchievements(result.achievements);
     
-            if (dashboardResult.error) {
-                toast({ variant: 'destructive', title: 'Error', description: dashboardResult.error });
+            if (result.error) {
+                toast({ variant: 'destructive', title: 'Error', description: result.error });
             }
             
-            if (quizzesResult.error) {
-                toast({ variant: 'destructive', title: 'Error fetching quizzes', description: quizzesResult.error });
-            } else if (quizzesResult.quizzes) {
-                setQuizzes(quizzesResult.quizzes);
-            }
-            
-            if (quizzesResult.quizzes?.length === 0 && user.role === 'child' && !user.parentId) {
+            if (result.quizzes?.length === 0 && user.role === 'child' && !user.parentId) {
                 toast({ variant: 'default', title: 'Welcome!', description: 'Please ask your parent to add you to their account to see quizzes.' });
             }
 
