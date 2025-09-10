@@ -1,59 +1,39 @@
-rules_version = '2';
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isParent() {
-        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
     
-    function isMyChild(childId) {
-        return get(/databases/$(database)/documents/users/$(childId)).data.parentId == request.auth.uid;
-    }
-
+    // Users can read/write their own user profile
     match /users/{userId} {
-      // Allow a user to read their own document.
       allow read, update: if request.auth.uid == userId;
-      
-      // Allow a user to create their own document.
-      allow create: if isSignedIn();
-
-      // **FIX:** Allow any signed-in user to query the 'users' collection.
-      // This is required for the initial admin check during profile creation.
-      allow list: if isSignedIn();
+      allow create: if request.auth.uid != null;
     }
 
+    // Quizzes can be read by anyone, but only created/modified by the owner (parent)
     match /quizzes/{quizId} {
-      // Parents can create quizzes.
-      allow create: if isParent();
-      // Anyone authenticated can read quizzes.
-      allow read: if isSignedIn();
+      allow read: if request.auth.uid != null;
+      allow create, update, delete: if request.auth.uid == resource.data.userId;
     }
     
+    // Preloaded quizzes are read-only for any authenticated user
     match /preloadedQuizzes/{quizId} {
-        // Allow authenticated users to read pre-loaded quizzes
-        allow read: if isSignedIn();
-        // Allow admins to write (for seeding)
-        allow write: if isParent();
-    }
-
-    match /quizAttempts/{attemptId} {
-        // Children can create their own attempts
-        allow create: if request.resource.data.userId == request.auth.uid;
-        // Children can read their own attempts
-        // Parents can read their childrens' attempts
-        allow read: if request.resource.data.userId == request.auth.uid || isMyChild(request.resource.data.userId);
+      allow read: if request.auth.uid != null;
+      allow write: if false; // Nobody can write to preloaded quizzes from the client
     }
     
+    // Quiz attempts can be created by the user taking the quiz, and read by that user or their parent
+    match /quizAttempts/{attemptId} {
+      allow create: if request.auth.uid == request.resource.data.userId;
+      // Allow read if you are the user who made the attempt OR you are the parent of that user
+      allow read: if request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/users/$(resource.data.userId)).data.parentId == request.auth.uid;
+      allow update, delete: if false; // Attempts are immutable
+    }
+    
+    // Achievements can be read by the user or their parent, but only created by the server
     match /userAchievements/{achievementId} {
-        // User can create their own achievement entries
-        allow create: if request.resource.data.userId == request.auth.uid;
-        // User can read their own achievements
-        allow read: if request.resource.data.userId == request.auth.uid;
+      allow create: if false; // Locked down - only server can create
+      allow read: if request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/users/$(resource.data.userId)).data.parentId == request.auth.uid;
+      allow update, delete: if false;
     }
   }
 }
