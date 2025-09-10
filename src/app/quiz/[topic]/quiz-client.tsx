@@ -31,6 +31,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { getEncouragement } from '@/lib/encouragement';
 
 interface QuizClientProps {
   flashcards: Flashcard[];
@@ -57,6 +58,7 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
   const [hintError, setHintError] = useState<string | null>(null);
   const [answeredFlashcards, setAnsweredFlashcards] = useState<AnsweredFlashcard[]>([]);
   const [isStarted, setIsStarted] = useState(quizType !== 'vocabulary');
+  const [encouragementMessage, setEncouragementMessage] = useState('');
   
   const currentFlashcard = useMemo(() => {
       if (!studyMode) return null;
@@ -144,6 +146,7 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
       setCurrentIndex((prev) => prev + 1);
       resetQuestionState();
     } else {
+      setEncouragementMessage(getEncouragement(score, flashcards.length));
       setQuizCompleted(true);
     }
   };
@@ -327,7 +330,7 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
         <CardFooter className="flex-col items-start gap-4">
           <div className="flex w-full justify-between items-center">
             <div>
-               {!hint && !isHintLoading && (
+               {!hint && !isHintLoading && !isAnswered && (
                 <Button variant="ghost" size="sm" onClick={handleGetHint}>
                   <Lightbulb className="mr-2 h-4 w-4" />
                   Need a hint?
@@ -355,10 +358,10 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
 
       <Dialog open={quizCompleted} onOpenChange={setQuizCompleted}>
         <DialogContent className="sm:max-w-lg text-center">
-          {score === flashcards.length && <Confetti />}
+          {score / flashcards.length >= 0.9 && <Confetti />}
           <DialogHeader className="text-center items-center">
             <DialogTitle className="text-3xl font-headline mt-4">
-              {score / flashcards.length >= 0.8 ? 'Excellent!' : 'Quiz Completed!'}
+              {encouragementMessage}
             </DialogTitle>
              <DialogDescription className="text-lg">
               You scored {score} out of {flashcards.length}.
@@ -377,7 +380,7 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
                                 <XCircle className="h-5 w-5 text-red-600" />
                             )}
                             <p className={cn(card.isCorrect ? 'text-green-700' : 'text-red-700', 'text-sm')}>
-                                {card.isCorrect ? 'Correct!' : `Your answer: ${card.selectedAnswer}`}
+                                {card.isCorrect ? `Your answer: ${card.selectedAnswer}` : `Your answer: ${card.selectedAnswer}`}
                             </p>
                         </div>
                         {!card.isCorrect && (
