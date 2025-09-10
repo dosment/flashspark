@@ -326,22 +326,23 @@ function ChildDashboard({ user }: { user: AppUser }) {
 export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
 
-  if (loading || !user) {
+  if (loading) {
     return (
-       <div className="flex flex-col items-center justify-center min-h-screen text-center">
+      <div className="flex flex-col items-center justify-center min-h-screen text-center">
         <LoaderCircle className="w-12 h-12 animate-spin text-primary mb-4" />
         <h1 className="text-2xl font-bold font-headline text-primary-foreground">
           Loading Dashboard...
         </h1>
       </div>
     );
+  }
+
+  if (!user) {
+    // This should ideally not be reached if the layout/route handles auth properly,
+    // but it's a good failsafe.
+    router.push('/login');
+    return null; // Render nothing while redirecting
   }
 
   console.log(`[DashboardPage] Rendering dashboard for user ${user.uid} with role ${user.role}`);
