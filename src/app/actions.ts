@@ -15,7 +15,6 @@ import {
     getUserAchievements,
     unlockAchievement,
     updateUserProfile,
-    createNewUser,
 } from '@/lib/firestore';
 import { Quiz, QuizAttempt, AppUser, QuizType, UserAchievement, Achievement } from '@/lib/types';
 import { getCurrentUser } from '@/lib/auth-utils';
@@ -140,47 +139,43 @@ export async function saveQuizAttemptAction(attemptData: Omit<QuizAttempt, 'id' 
     }
 }
 
-export async function addChildAction(childData: {email: string; password?: string; gradeLevel: string; dateOfBirth?: string}) {
+export async function addChildAction(childEmail: string) {
     const parent = await getCurrentUser();
     if (!parent || parent.role !== 'admin') {
         return { error: 'Only parents can add children.' };
     }
 
-    if (childData.email.toLowerCase() === parent.email?.toLowerCase()) {
+    if (childEmail.toLowerCase() === parent.email?.toLowerCase()) {
         return { error: 'You cannot add yourself as a child.' };
     }
 
     try {
-        // Check if a user with this email already exists
-        const existingUser = await getUserByEmail(childData.email);
-        if (existingUser) {
-            return { error: 'A user with this email already exists.' };
+        // Find the user with the given email.
+        const childUser = await getUserByEmail(childEmail);
+
+        if (!childUser) {
+            return { error: 'No user found with this email. Please ask your child to sign up first.' };
         }
 
-        // Create the new user
-        const newUser = await createNewUser({
-            email: childData.email,
-            password: childData.password,
-            parentId: parent.uid,
-            gradeLevel: childData.gradeLevel,
-            dateOfBirth: childData.dateOfBirth,
-        });
-
-        if (newUser) {
-            return { success: true };
-        } else {
-            return { error: 'Failed to create new user.' };
+        if (childUser.parentId) {
+            if (childUser.parentId === parent.uid) {
+                return { error: 'This child is already linked to your account.' };
+            } else {
+                return { error: 'This child is already linked to another parent account.' };
+            }
         }
+        
+        if (childUser.role === 'admin') {
+             return { error: 'This user is a parent and cannot be added as a child.' };
+        }
+
+        // Link the child to the parent.
+        await setUserParent(childUser.uid, parent.uid);
+
+        return { success: true };
     } catch (error: any) {
         console.error('Failed to add child:', error);
-        // Provide more specific error messages
-        if (error.code === 'auth/email-already-exists') {
-            return { error: 'This email address is already in use by another account.' };
-        }
-        if (error.code === 'auth/invalid-password') {
-            return { error: 'The password must be at least 6 characters long.' };
-        }
-        return { error: error.message || 'An unexpected error occurred while adding the child.' };
+        return { error: 'An unexpected error occurred while adding the child.' };
     }
 }
 
@@ -218,13 +213,14 @@ export async function addParentAction(parentEmail: string) {
 async function checkAndAwardAchievementsAction(userId: string): Promise<Achievement[]> {
     const newlyUnlocked: Achievement[] = [];
     try {
-        const [attempts, unlocked] = await Promise.all([
+        const [attempts, unlocked, allAchievements] = await Promise.all([
             getQuizAttemptsForUser(userId),
-            getUserAchievements(userId)
+            getUserAchievements(userId),
+            Promise.resolve(ALL_ACHIEVEMENTS) // Use the imported constant
         ]);
 
         const unlockedIds = new Set(unlocked.map(a => a.achievementId));
-        const allAchievementsMap = new Map(ALL_ACHIEVEMENTS.map(a => [a.id, a]));
+        const allAchievementsMap = new Map(allAchievements.map(a => [a.id, a]));
 
         const checkAndUnlock = async (achievementId: string, condition: boolean) => {
             if (!unlockedIds.has(achievementId) && condition) {

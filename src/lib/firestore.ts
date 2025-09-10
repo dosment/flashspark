@@ -11,37 +11,6 @@ type QuizForDb = Omit<Quiz, 'id'>;
 const db = getFirestoreAdmin();
 const auth = adminAuth(getFirebaseAdminApp());
 
-// Create a new user in both Firebase Auth and Firestore
-export async function createNewUser(userData: {
-    email: string;
-    password?: string;
-    parentId: string;
-    gradeLevel: string;
-    dateOfBirth?: string;
-}): Promise<AppUser | null> {
-    const { email, password, parentId, gradeLevel, dateOfBirth } = userData;
-
-    // 1. Create user in Firebase Authentication
-    const userRecord = await auth.createUser({
-        email: email.toLowerCase(),
-        password: password,
-    });
-
-    // 2. Create user profile in Firestore
-    const newUserProfile: AppUser = {
-        uid: userRecord.uid,
-        email: email.toLowerCase(),
-        role: 'child',
-        parentId,
-        gradeLevel,
-        dateOfBirth,
-        avatarId: 'avatar-1',
-    };
-
-    await db.collection('users').doc(userRecord.uid).set(newUserProfile);
-
-    return newUserProfile;
-}
 
 // Save a quiz to Firestore
 export async function saveQuiz(quizData: Omit<Quiz, 'id' | 'createdAt'>): Promise<string> {
