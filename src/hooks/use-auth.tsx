@@ -22,18 +22,20 @@ import { useToast } from './use-toast';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-async function createUserProfile(firebaseUser: FirebaseAuthUser): Promise<AppUser> {
-    console.log(`[AUTH] Creating new user profile for UID: ${firebaseUser.uid}`);
+async function checkUserProfile(firebaseUser: FirebaseAuthUser): Promise<AppUser> {
+    console.log(`[AUTH] Checking user profile for UID: ${firebaseUser.uid}`);
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     const userDoc = await getDoc(userDocRef);
 
     if (userDoc.exists()) {
-        console.log(`[AUTH] User profile already exists for UID: ${firebaseUser.uid}. Returning existing data.`);
+        console.log(`[AUTH] User profile exists for UID: ${firebaseUser.uid}. Returning data.`);
         return userDoc.data() as AppUser;
     }
     
-    // New users always default to admin (parent) role.
-    console.log(`[AUTH] No existing profile. Creating new user with 'admin' role.`);
+    // This case should ideally not happen with the new admin-first creation flow.
+    // However, it's a good failsafe. A user signing up without being created by an admin
+    // will default to a parent/admin role.
+    console.warn(`[AUTH] No existing profile for ${firebaseUser.uid}. Creating new user with 'admin' role.`);
     const newUser: AppUser = {
         uid: firebaseUser.uid,
         email: firebaseUser.email!.toLowerCase(),
@@ -78,8 +80,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         setUser(userDoc.data() as AppUser);
                         console.log('[AUTH] AppUser state updated with profile data:', userDoc.data());
                     } else {
-                        console.log('[AUTH] Profile does not exist, creating it...');
-                        const userProfile = await createUserProfile(fbUser);
+                        // This case handles a user signing up for the very first time, who wasn't pre-provisioned by an admin.
+                        // They will default to an admin role.
+                        console.log('[AUTH] Profile does not exist, checking/creating it...');
+                        const userProfile = await checkUserProfile(fbUser);
                         setUser(userProfile);
                         console.log('[AUTH] AppUser state updated with new profile.');
                     }
@@ -168,3 +172,5 @@ export function useAuth() {
   }
   return context;
 }
+
+    

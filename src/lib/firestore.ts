@@ -12,6 +12,30 @@ const db = getFirestoreAdmin();
 const auth = adminAuth(getFirebaseAdminApp());
 
 
+export async function createUser(userData: {email: string, role: 'admin' | 'child', parentId?: string}): Promise<AppUser> {
+    console.log('[DB] createUser: Creating Firebase Auth user for email:', userData.email);
+    const authUser = await auth.createUser({
+        email: userData.email,
+        emailVerified: true, // Since we trust the admin creating the account
+    });
+    console.log('[DB] createUser: Firebase Auth user created successfully, UID:', authUser.uid);
+
+    const newUser: AppUser = {
+        uid: authUser.uid,
+        email: userData.email.toLowerCase(),
+        role: userData.role,
+        avatarId: 'avatar-1', // Default avatar
+        ...(userData.parentId && { parentId: userData.parentId }),
+    };
+
+    console.log('[DB] createUser: Creating Firestore user profile with data:', newUser);
+    await db.collection('users').doc(authUser.uid).set(newUser);
+    console.log('[DB] createUser: Firestore user profile created.');
+    
+    return newUser;
+}
+
+
 // Save a quiz to Firestore
 export async function saveQuiz(quizData: Omit<Quiz, 'id' | 'createdAt'>): Promise<string> {
   const quizCollection = db.collection('quizzes');
@@ -169,3 +193,5 @@ export async function unlockAchievement(userId: string, achievementId: string): 
         unlockedAt: serverTimestamp() as FieldValue,
     });
 }
+
+    

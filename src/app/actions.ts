@@ -15,6 +15,7 @@ import {
     getUserAchievements,
     unlockAchievement,
     updateUserProfile,
+    createUser,
 } from '@/lib/firestore';
 import { Quiz, QuizAttempt, AppUser, QuizType, UserAchievement, Achievement } from '@/lib/types';
 import { getCurrentUser } from '@/lib/auth-utils';
@@ -198,38 +199,20 @@ export async function addChildAction(childEmail: string) {
     }
 
     try {
-        console.log('[ACTION] addChildAction: Searching for user with email:', childEmail);
-        const childUser = await getUserByEmail(childEmail);
-
-        if (!childUser) {
-            console.warn('[ACTION] addChildAction: No user found for email:', childEmail);
-            return { error: 'No user found with this email. Please ask your child to sign up first.' };
-        }
-        console.log('[ACTION] addChildAction: Found user:', childUser.uid);
-
-        if (childUser.parentId) {
-            if (childUser.parentId === parent.uid) {
-                console.warn(`[ACTION] addChildAction: Child ${childUser.uid} already linked to this parent ${parent.uid}.`);
-                return { error: 'This child is already linked to your account.' };
-            } else {
-                 console.error(`[ACTION] addChildAction: Child ${childUser.uid} already linked to another parent ${childUser.parentId}.`);
-                return { error: 'This child is already linked to another parent account.' };
-            }
-        }
-        
-        if (childUser.role === 'admin') {
-             console.error(`[ACTION] addChildAction: User ${childUser.uid} is an admin and cannot be added as a child.`);
-             return { error: 'This user is a parent and cannot be added as a child.' };
-        }
-
-        console.log(`[ACTION] addChildAction: Linking child ${childUser.uid} to parent ${parent.uid}.`);
-        await setUserParent(childUser.uid, parent.uid);
-        await setUserRole(childUser.uid, 'child');
-        
-        console.log(`[ACTION] addChildAction: Successfully linked child.`);
+        console.log(`[ACTION] addChildAction: Creating user with email: ${childEmail}`);
+        const newUser = await createUser({
+            email: childEmail,
+            role: 'child',
+            parentId: parent.uid
+        });
+        console.log(`[ACTION] addChildAction: Successfully created and linked child user ${newUser.uid}.`);
         return { success: true };
+
     } catch (error: any) {
         console.error('[ACTION] addChildAction: Unexpected error', error);
+        if (error.code === 'auth/email-already-exists') {
+            return { error: 'A user with this email address already exists.' };
+        }
         return { error: 'An unexpected error occurred while adding the child.' };
     }
 }
@@ -249,26 +232,19 @@ export async function addParentAction(parentEmail: string) {
     }
 
     try {
-        console.log('[ACTION] addParentAction: Searching for user with email:', parentEmail);
-        const newParentUser = await getUserByEmail(parentEmail);
-
-        if (!newParentUser) {
-             console.warn('[ACTION] addParentAction: No user found for email:', parentEmail);
-            return { error: 'No user found with this email. Please ensure the new parent has signed up first.' };
-        }
-
-        if (newParentUser.role === 'admin') {
-            console.warn(`[ACTION] addParentAction: User ${newParentUser.uid} is already an admin.`);
-            return { error: 'This user is already a parent.' };
-        }
-
-        console.log(`[ACTION] addParentAction: Promoting user ${newParentUser.uid} to admin.`);
-        await setUserRole(newParentUser.uid, 'admin');
-
-        console.log(`[ACTION] addParentAction: Successfully promoted user.`);
+        console.log(`[ACTION] addParentAction: Creating user with email: ${parentEmail} and promoting to admin.`);
+        await createUser({
+            email: parentEmail,
+            role: 'admin'
+        });
+        console.log(`[ACTION] addParentAction: Successfully created and promoted user.`);
         return { success: true };
-    } catch (error) {
+
+    } catch (error: any) {
         console.error('[ACTION] addParentAction: Unexpected error', error);
+        if (error.code === 'auth/email-already-exists') {
+            return { error: 'A user with this email address already exists.' };
+        }
         return { error: 'An unexpected error occurred while adding the parent.' };
     }
 }
@@ -319,3 +295,5 @@ async function checkAndAwardAchievementsAction(userId: string): Promise<Achievem
     console.log(`[ACHIEVEMENT] Finished check for ${userId}. Awarded ${newlyUnlocked.length} new achievements.`);
     return newlyUnlocked;
 }
+
+    

@@ -33,8 +33,8 @@ export function AddParentDialog({ onParentAdded }: { onParentAdded: () => void }
 
     if (result.success) {
       toast({
-        title: 'Parent Added!',
-        description: `${email} has been promoted to a parent role.`,
+        title: 'Parent Account Created!',
+        description: `An account for ${email} has been created with parent permissions.`,
       });
       onParentAdded();
       setIsOpen(false);
@@ -60,9 +60,9 @@ export function AddParentDialog({ onParentAdded }: { onParentAdded: () => void }
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleAddParent}>
           <DialogHeader>
-            <DialogTitle>Add Parent Account</DialogTitle>
+            <DialogTitle>Create Parent Account</DialogTitle>
             <DialogDescription>
-              Enter the Google email address of the user you wish to promote to a parent. They must have already signed up for the app.
+              Enter the Google email address of the user you wish to create a parent account for. They will then be able to log in with that Google account.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -86,10 +86,10 @@ export function AddParentDialog({ onParentAdded }: { onParentAdded: () => void }
               {isAdding ? (
                 <>
                   <LoaderCircle className="animate-spin mr-2" />
-                  Adding...
+                  Creating...
                 </>
               ) : (
-                'Add Parent'
+                'Create Parent Account'
               )}
             </Button>
           </DialogFooter>
@@ -98,3 +98,5 @@ export function AddParentDialog({ onParentAdded }: { onParentAdded: () => void }
     </Dialog>
   );
 }
+
+    

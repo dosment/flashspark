@@ -33,8 +33,8 @@ export function AddChildDialog({ onChildAdded }: { onChildAdded: () => void }) {
 
     if (result.success) {
       toast({
-        title: 'Child Linked!',
-        description: `Account for ${email} has been successfully linked.`,
+        title: 'Child Account Created!',
+        description: `An account for ${email} has been created. They can now log in with their Google account.`,
       });
       onChildAdded();
       setIsOpen(false);
@@ -60,9 +60,9 @@ export function AddChildDialog({ onChildAdded }: { onChildAdded: () => void }) {
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleAddChild}>
           <DialogHeader>
-            <DialogTitle>Link Child Account</DialogTitle>
+            <DialogTitle>Create Child Account</DialogTitle>
             <DialogDescription>
-                First, have your child sign up with their Google account. Then, enter their email address here to link them to your parent account.
+                Enter your child's Google email address to create an account for them. They can then sign in using that Google account.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -83,10 +83,10 @@ export function AddChildDialog({ onChildAdded }: { onChildAdded: () => void }) {
               {isAdding ? (
                 <>
                   <LoaderCircle className="animate-spin mr-2" />
-                  Linking Account...
+                  Creating Account...
                 </>
               ) : (
-                'Link Child Account'
+                'Create Child Account'
               )}
             </Button>
           </DialogFooter>
@@ -95,3 +95,5 @@ export function AddChildDialog({ onChildAdded }: { onChildAdded: () => void }) {
     </Dialog>
   );
 }
+
+    
