@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, LayoutDashboard, Rocket, PlusCircle } from 'lucide-react';
+import { ArrowRight, LayoutDashboard, Rocket } from 'lucide-react';
 import Header from '@/components/Header';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -30,14 +30,6 @@ export default function Home() {
                 <ArrowRight className="ml-2" />
               </Link>
             </Button>
-            {user?.role === 'admin' && (
-              <Button asChild size="lg" variant="outline">
-                <Link href="/create-quiz">
-                  <PlusCircle className="mr-2" />
-                  Create a Quiz
-                </Link>
-              </Button>
-            )}
           </div>
         </section>
       </main>
@@ -47,5 +39,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
