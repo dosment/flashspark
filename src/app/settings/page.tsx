@@ -8,7 +8,7 @@ import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, CheckCircle, Award, User, Users, ShieldPlus, UserPlus } from 'lucide-react';
+import { LoaderCircle, CheckCircle, Award, User, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ALL_AVATARS, getAvatar } from '@/lib/avatars';
 import { updateUserProfile } from '@/lib/firestore';
@@ -24,8 +24,7 @@ import { AddChildDialog } from '@/components/AddChildDialog';
 import { AddParentDialog } from '@/components/AddParentDialog';
 
 function ProfileTab() {
-  const { user, logOut } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [achievements, setAchievements] = useState<UserAchievement[]>([]);
@@ -33,7 +32,10 @@ function ProfileTab() {
 
   useEffect(() => {
     async function fetchAchievements() {
-        if (!user) return;
+        if (!user || user.role !== 'child') {
+            setIsFetchingAchievements(false);
+            return;
+        };
         setIsFetchingAchievements(true);
         const result = await getDashboardDataAction();
         if (result.achievements) {
@@ -43,11 +45,6 @@ function ProfileTab() {
     }
     fetchAchievements();
   }, [user]);
-
-  const handleLogout = async () => {
-    await logOut();
-    router.push('/');
-  };
 
   const handleSelectAvatar = async (avatarId: string) => {
     if (!user || isSaving) return;
@@ -94,9 +91,6 @@ function ProfileTab() {
                        {user.gradeLevel && <Badge variant="outline">{user.gradeLevel}</Badge>}
                     </div>
                 </CardHeader>
-                <CardFooter className="flex justify-center">
-                    <Button onClick={handleLogout} variant="destructive">Log Out</Button>
-                </CardFooter>
             </Card>
 
             {user.role === 'child' && (
@@ -185,7 +179,7 @@ function ProfileTab() {
 }
 
 
-function UserManagementTab() {
+function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
   const [users, setUsers] = useState<{ children: AppUser[] }>({ children: [] });
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -205,6 +199,11 @@ function UserManagementTab() {
     fetchUsers();
   }, [fetchUsers]);
   
+  const handleUserAdded = () => {
+      fetchUsers(); // Re-fetch users for this component
+      onUsersChanged(); // Trigger re-fetch on the dashboard
+  }
+
   const { children } = users;
 
   return (
@@ -219,7 +218,7 @@ function UserManagementTab() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-medium">Child Accounts</h3>
-            <AddChildDialog onChildAdded={fetchUsers} />
+            <AddChildDialog onChildAdded={handleUserAdded} />
           </div>
           {isLoading ? (
              <div className="flex justify-center items-center p-4">
@@ -254,7 +253,7 @@ function UserManagementTab() {
         <div className="space-y-4">
            <div className="flex items-center justify-between">
             <h3 className="text-lg font-medium">Parent Accounts</h3>
-            <AddParentDialog onParentAdded={() => {}} />
+            <AddParentDialog onParentAdded={handleUserAdded} />
           </div>
            <p className="text-sm text-muted-foreground">
             You can grant parent/admin permissions to other users. They will be able to create quizzes and manage children.
@@ -267,14 +266,22 @@ function UserManagementTab() {
 
 
 export default function SettingsPage() {
-  const { user, firebaseUser, loading } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
+  // This is a dummy function for now, but can be used to trigger dashboard refresh
+  const handleUsersChanged = useCallback(() => {
+    // This could be implemented with a global state manager or context
+    // to trigger a re-fetch on the dashboard page. For now, we'll
+    // rely on the user navigating back to the dashboard to see changes.
+    console.log("A user was added/changed, dashboard data should be refreshed.");
+  }, []);
+
   useEffect(() => {
-    if (!loading && !firebaseUser) {
+    if (!loading && !user) {
       router.push('/login');
     }
-  }, [firebaseUser, loading, router]);
+  }, [user, loading, router]);
 
   if (loading || !user) {
     return (
@@ -303,7 +310,7 @@ export default function SettingsPage() {
               <ProfileTab />
             </TabsContent>
             <TabsContent value="users" className="mt-6">
-              <UserManagementTab />
+              <UserManagementTab onUsersChanged={handleUsersChanged} />
             </TabsContent>
           </Tabs>
         ) : (
@@ -311,6 +318,9 @@ export default function SettingsPage() {
             <ProfileTab />
         )}
       </main>
+      <footer className="text-center py-4 text-muted-foreground text-sm">
+        &copy; {new Date().getFullYear()} FlashSpark. All rights reserved.
+      </footer>
     </div>
   );
 }

@@ -107,10 +107,6 @@ function AdminDashboard({ user }: { user: AppUser }) {
             <div>
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-3xl font-bold font-headline">Child Activity</h2>
-                    <div className="flex gap-2">
-                        <AddChildDialog onChildAdded={fetchDashboardData} />
-                        <AddParentDialog onParentAdded={fetchDashboardData} />
-                    </div>
                 </div>
                  {isLoading ? (
                     <div className="text-center">
@@ -120,11 +116,8 @@ function AdminDashboard({ user }: { user: AppUser }) {
                     <Card className="text-center py-12">
                         <CardHeader>
                             <CardTitle>No children found</CardTitle>
-                            <CardDescription>Click the button to add your first child and see their progress.</CardDescription>
+                            <CardDescription>Add a child account via the Settings page to see their progress.</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                             <AddChildDialog onChildAdded={fetchDashboardData} />
-                        </CardContent>
                     </Card>
                 ) : (
                     <Carousel
