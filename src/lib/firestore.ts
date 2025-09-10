@@ -1,7 +1,8 @@
+
 'use server';
 
 import { getFirebaseAdminApp, getFirestoreAdmin } from './firebase-admin';
-import { serverTimestamp, FieldValue } from 'firebase-admin/firestore';
+import { serverTimestamp, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import type { Quiz, AppUser, QuizAttempt, PreloadedQuiz, UserAchievement } from './types';
 import { auth as adminAuth } from 'firebase-admin';
 
@@ -45,7 +46,7 @@ export async function createNewUser(userData: {
 // Save a quiz to Firestore
 export async function saveQuiz(quizData: Omit<Quiz, 'id' | 'createdAt'>): Promise<string> {
   const quizCollection = db.collection('quizzes');
-  const newQuiz: QuizForDb = {
+  const newQuiz = {
     ...quizData,
     createdAt: serverTimestamp() as FieldValue,
   };
@@ -61,9 +62,14 @@ export async function getQuizzesForUser(userId: string): Promise<Quiz[]> {
   const querySnapshot = await q.get();
   querySnapshot.forEach((doc) => {
     const data = doc.data();
+    const firestoreTimestamp = data.createdAt as Timestamp;
     quizzes.push({
       id: doc.id,
       ...data,
+      createdAt: {
+          seconds: firestoreTimestamp.seconds,
+          nanoseconds: firestoreTimestamp.nanoseconds,
+      },
     } as Quiz);
   });
 
@@ -98,9 +104,15 @@ export async function getQuiz(quizId: string): Promise<Quiz | null> {
 
     if (docSnap.exists) {
         const data = docSnap.data();
+        if (!data) return null;
+        const firestoreTimestamp = data.createdAt as Timestamp;
         return {
             id: docSnap.id,
-            ...data
+            ...data,
+             createdAt: {
+                seconds: firestoreTimestamp.seconds,
+                nanoseconds: firestoreTimestamp.nanoseconds,
+            },
         } as Quiz;
     } else {
         return null;

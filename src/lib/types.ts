@@ -1,5 +1,7 @@
+
 import type { User as FirebaseAuthUser } from 'firebase/auth';
 import type { LucideIcon } from 'lucide-react';
+import type { Timestamp } from 'firebase/firestore';
 
 export type Flashcard = {
   question: string;
@@ -24,7 +26,7 @@ export type Quiz = {
   flashcards: Flashcard[];
   userId: string; // The ID of the parent who created it
   quizType: QuizType;
-  createdAt: any;
+  createdAt: Timestamp;
 };
 
 export type PreloadedQuiz = {
