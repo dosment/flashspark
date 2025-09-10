@@ -87,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         const userData = userDoc.data() as AppUser;
                         // Correct legacy 'admin' role on the fly
                         if (userData.role === 'admin') {
+                            console.log(`[AUTH] Translating legacy 'admin' role to 'parent' for UID ${fbUser.uid}.`);
                             userData.role = 'parent';
                         }
                         setUser(userData);
