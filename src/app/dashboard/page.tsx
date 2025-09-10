@@ -121,6 +121,11 @@ function AdminDashboard({ user }: { user: AppUser }) {
                             <CardTitle>No children found</CardTitle>
                             <CardDescription>Add a child account via the Settings page to see their progress.</CardDescription>
                         </CardHeader>
+                        <CardFooter>
+                            <Button asChild className="mx-auto">
+                                <Link href="/settings">Go to Settings</Link>
+                            </Button>
+                        </CardFooter>
                     </Card>
                 ) : (
                     <Carousel
@@ -144,7 +149,7 @@ function AdminDashboard({ user }: { user: AppUser }) {
                                         <CardHeader>
                                                 <CardTitle className="flex items-center gap-2 font-headline">
                                                     <User className="text-primary"/>
-                                                    {child.email}
+                                                    {child.name || child.email}
                                                 </CardTitle>
                                                 <CardDescription>
                                                     {child.attempts.length > 0 ? `Last active: ${formatDistanceToNow(new Date(child.attempts[0].completedAt.seconds * 1000), { addSuffix: true })}` : 'No activity yet.'}
@@ -198,7 +203,7 @@ function AdminDashboard({ user }: { user: AppUser }) {
 
 
 function ChildDashboard({ user }: { user: AppUser }) {
-    const [data, setData] = useState<{ quizzes: Quiz[], achievements: UserAchievement[] }>({ quizzes: [], achievements: [] });
+    const [data, setData] = useState<{ quizzes: Quiz[], achievements: UserAchievement[], attempts: QuizAttempt[] }>({ quizzes: [], achievements: [], attempts: [] });
     const [isFetching, setIsFetching] = useState(true);
     const { toast } = useToast();
 
@@ -211,12 +216,13 @@ function ChildDashboard({ user }: { user: AppUser }) {
             if (result.error) {
                 console.error('[ChildDashboard] Error fetching data:', result.error);
                 toast({ variant: 'destructive', title: 'Error', description: result.error });
-                 setData({ quizzes: [], achievements: [] });
+                 setData({ quizzes: [], achievements: [], attempts: [] });
             } else {
                 console.log('[ChildDashboard] Data fetched successfully:', result);
                 setData({
                     quizzes: result.quizzes || [],
-                    achievements: result.achievements || []
+                    achievements: result.achievements || [],
+                    attempts: result.attempts || []
                 });
             }
             
@@ -240,9 +246,11 @@ function ChildDashboard({ user }: { user: AppUser }) {
                     <CardContent className="p-6">
                         {isFetching ? (
                              <div className="text-center"><LoaderCircle className="w-8 h-8 animate-spin text-primary mx-auto" /></div>
+                        ) : ALL_ACHIEVEMENTS.length === 0 ? (
+                            <p className="text-muted-foreground text-center">No achievements available yet.</p>
                         ) : (
                              <TooltipProvider>
-                                <div className="flex flex-wrap gap-4">
+                                <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                                 {ALL_ACHIEVEMENTS.map(ach => {
                                     const unlocked = unlockedAchievementMap.get(ach.id);
                                     const Icon = ach.icon;

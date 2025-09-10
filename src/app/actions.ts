@@ -216,7 +216,7 @@ export async function addChildAction(childData: { email: string; name: string; g
             parentId: parent.uid
         });
         console.log(`[ACTION] addChildAction: Successfully created and linked child user ${newUser.uid}.`);
-        return { success: true };
+        return { success: true, user: newUser };
 
     } catch (error: any) {
         console.error('[ACTION] addChildAction: Unexpected error', error);
@@ -243,12 +243,12 @@ export async function addParentAction(parentEmail: string) {
 
     try {
         console.log(`[ACTION] addParentAction: Creating user with email: ${parentEmail} and promoting to admin.`);
-        await createUser({
+        const newUser = await createUser({
             email: parentEmail,
             role: 'admin'
         });
         console.log(`[ACTION] addParentAction: Successfully created and promoted user.`);
-        return { success: true };
+        return { success: true, user: newUser };
 
     } catch (error: any) {
         console.error('[ACTION] addParentAction: Unexpected error', error);
@@ -304,4 +304,16 @@ async function checkAndAwardAchievementsAction(userId: string): Promise<Achievem
     }
     console.log(`[ACHIEVEMENT] Finished check for ${userId}. Awarded ${newlyUnlocked.length} new achievements.`);
     return newlyUnlocked;
+}
+
+export async function updateUserProfileAction(uid: string, data: Partial<AppUser>) {
+    console.log(`[ACTION] updateUserProfileAction: Updating profile for UID ${uid} with data:`, data);
+    try {
+        await updateUserProfile(uid, data);
+        console.log(`[ACTION] updateUserProfileAction: Profile updated successfully for UID ${uid}.`);
+        return { success: true };
+    } catch (error) {
+        console.error(`[ACTION] updateUserProfileAction: Error updating profile for UID ${uid}:`, error);
+        return { error: 'Failed to update profile.' };
+    }
 }
