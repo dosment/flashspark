@@ -1,0 +1,366 @@
+
+'use client';
+
+import { useState, Suspense, useEffect, useCallback } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import Header from '@/components/Header';
+import type { Flashcard, QuizType, PreloadedQuiz, AppUser } from '@/lib/types';
+import { X, LoaderCircle, Wand2, Save, BookOpen } from 'lucide-react';
+import { generateFlashcards } from '@/ai/flows/generate-flashcards-from-topic';
+import { useAuth } from '@/hooks/use-auth';
+import { saveQuizAction, getPreloadedQuizzesAction } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+function CreateQuizPageContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { user, loading } = useAuth();
+  const { toast } = useToast();
+  
+  const isAiMode = searchParams.get('ai') === 'true';
+
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [options, setOptions] = useState(['', '', '']);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [aiTopic, setAiTopic] = useState('');
+  const [quizTitle, setQuizTitle] = useState('');
+  const [quizType, setQuizType] = useState<QuizType>('standard');
+  const [activeView, setActiveView] = useState<'manual' | 'ai' | 'preloaded'>('manual');
+  
+  const [preloadedQuizzes, setPreloadedQuizzes] = useState<PreloadedQuiz[]>([]);
+  const [isFetchingPreloaded, setIsFetchingPreloaded] = useState(false);
+
+
+  const fetchPreloadedQuizzes = useCallback(async () => {
+    setIsFetchingPreloaded(true);
+    const result = await getPreloadedQuizzesAction();
+    if (result.quizzes) {
+      setPreloadedQuizzes(result.quizzes);
+    } else {
+      toast({ variant: 'destructive', title: 'Error', description: result.error });
+    }
+    setIsFetchingPreloaded(false);
+  }, [toast]);
+  
+  useEffect(() => {
+    if (activeView === 'preloaded') {
+      fetchPreloadedQuizzes();
+    }
+  }, [activeView, fetchPreloadedQuizzes]);
+
+  useEffect(() => {
+    if (isAiMode) {
+      setActiveView('ai');
+      setQuizType('vocabulary');
+    }
+  }, [isAiMode]);
+
+  useEffect(() => {
+    if (!loading && (!user || user.role !== 'admin')) {
+      toast({ variant: 'destructive', title: 'Unauthorized', description: 'Only parents can create quizzes.' });
+      router.push('/dashboard');
+    }
+  }, [user, loading, router, toast]);
+
+  const handleAddFlashcard = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (question && answer && options.every(opt => opt.trim() !== '')) {
+      const newFlashcard: Flashcard = {
+        question,
+        answer,
+        options: [...options, answer], 
+      };
+      setFlashcards([...flashcards, newFlashcard]);
+      setQuestion('');
+      setAnswer('');
+      setOptions(['', '', '']);
+    }
+  };
+  
+  const handleAiGenerate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiTopic) return;
+    setIsGenerating(true);
+    setQuizTitle(aiTopic);
+    setQuizType('vocabulary');
+
+    const gradeLevel = (user as AppUser)?.gradeLevel;
+    const dob = (user as AppUser)?.dateOfBirth;
+    let age;
+    if (dob) {
+        const birthDate = new Date(dob);
+        const today = new Date();
+        age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+    }
+
+    try {
+      const result = await generateFlashcards({ 
+          topic: aiTopic, 
+          numFlashcards: 10,
+          ...(gradeLevel && { gradeLevel }),
+          ...(age && { age }),
+      });
+      setFlashcards(result.flashcards);
+    } catch (error) {
+      console.error("Failed to generate flashcards", error);
+      toast({ variant: "destructive", title: "AI Generation Failed", description: "Could not generate flashcards. Please try again." });
+    }
+    setIsGenerating(false);
+  };
+
+  const handleSaveQuiz = async () => {
+    if (flashcards.length === 0 || !quizTitle) {
+        toast({ variant: "destructive", title: "Cannot Save Quiz", description: "Please add at least one flashcard and a title." });
+        return;
+    }
+    setIsSaving(true);
+    const result = await saveQuizAction({ title: quizTitle, flashcards, quizType });
+    if (result.success) {
+        toast({ title: "Quiz Saved!", description: "Your new quiz has been saved to your dashboard." });
+        router.push('/dashboard');
+    } else {
+        toast({ variant: "destructive", title: "Save Failed", description: result.error });
+    }
+    setIsSaving(false);
+  }
+
+  const handleOptionChange = (index: number, value: string) => {
+    const newOptions = [...options];
+    newOptions[index] = value;
+    setOptions(newOptions);
+  };
+
+  const removeFlashcard = (index: number) => {
+    setFlashcards(flashcards.filter((_, i) => i !== index));
+  };
+  
+  const handleSelectPreloaded = (quiz: { title: string; flashcards: Flashcard[] }) => {
+    setQuizTitle(quiz.title);
+    setFlashcards(quiz.flashcards);
+    setQuizType('vocabulary');
+    toast({ title: "Quiz Loaded!", description: `Loaded "${quiz.title}" with ${quiz.flashcards.length} flashcards.`})
+  }
+
+  if (loading || !user) {
+    return (
+       <div className="flex flex-col items-center justify-center min-h-screen text-center">
+        <LoaderCircle className="w-12 h-12 animate-spin text-primary mb-4" />
+        <h1 className="text-2xl font-bold font-headline text-primary-foreground">
+          Loading...
+        </h1>
+      </div>
+    );
+  }
+   if (user.role !== 'admin') {
+    return null; // Redirect is handled by useEffect
+  }
+  
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="container mx-auto px-4 py-8 md:py-12">
+        <section className="max-w-4xl mx-auto">
+            <div className="flex justify-center mb-8 gap-2">
+                <Button variant={activeView === 'manual' ? 'default' : 'outline'} onClick={() => setActiveView('manual')}>Create Manually</Button>
+                <Button variant={activeView === 'ai' ? 'default' : 'outline'} onClick={() => {setActiveView('ai'); setQuizType('vocabulary')}}>Generate with AI</Button>
+                <Button variant={activeView === 'preloaded' ? 'default' : 'outline'} onClick={() => {setActiveView('preloaded'); setQuizType('vocabulary')}}>Use Preloaded</Button>
+            </div>
+
+         {activeView === 'ai' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl font-headline flex items-center gap-2">
+                  <Wand2 />
+                  Generate Vocabulary Quiz with AI
+                </CardTitle>
+                 <CardDescription>Enter a topic and let our AI create a vocabulary quiz for you.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleAiGenerate} className="flex gap-2">
+                    <Input
+                        value={aiTopic}
+                        onChange={(e) => setAiTopic(e.target.value)}
+                        placeholder="e.g., 'The Solar System'"
+                        required
+                        disabled={isGenerating}
+                    />
+                    <Button type="submit" disabled={isGenerating || isSaving}>
+                        {isGenerating ? <LoaderCircle className="animate-spin" /> : "Generate"}
+                    </Button>
+                </form>
+              </CardContent>
+            </Card>
+          )} 
+          
+          {activeView === 'manual' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl font-headline">Create Your Custom Quiz</CardTitle>
+                <CardDescription>Build a quiz from scratch with your own questions and answers.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleAddFlashcard} className="space-y-6">
+                  <div className="space-y-3">
+                      <Label>Quiz Type</Label>
+                      <RadioGroup
+                        onValueChange={(value) => setQuizType(value as QuizType)}
+                        className="flex gap-4"
+                        value={quizType}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="standard" id="r1" />
+                          <Label htmlFor="r1">Standard (Q&A)</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="vocabulary" id="r2" />
+                          <Label htmlFor="r2">Vocabulary (Term/Definition)</Label>
+                        </div>
+                      </RadioGroup>
+                  </div>
+                   <div className="space-y-2">
+                    <Label htmlFor="quiz-title">Quiz Title</Label>
+                    <Input
+                      id="quiz-title"
+                      value={quizTitle}
+                      onChange={(e) => setQuizTitle(e.target.value)}
+                      placeholder="e.g., Weekly Science Review"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="question">{quizType === 'vocabulary' ? 'Definition' : 'Question'}</Label>
+                    <Textarea
+                      id="question"
+                      value={question}
+                      onChange={(e) => setQuestion(e.target.value)}
+                      placeholder={quizType === 'vocabulary' ? 'e.g., The star at the center of our solar system.' : 'e.g., What is the capital of France?'}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="answer">{quizType === 'vocabulary' ? 'Term' : 'Correct Answer'}</Label>
+                    <Input
+                      id="answer"
+                      value={answer}
+                      onChange={(e) => setAnswer(e.target.value)}
+                      placeholder={quizType === 'vocabulary' ? 'e.g., Sun' : 'e.g., Paris'}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-4">
+                     <Label>Distractor Options</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {options.map((option, index) => (
+                              <Input
+                              key={index}
+                              value={option}
+                              onChange={(e) => handleOptionChange(index, e.target.value)}
+                              placeholder={`Option ${index + 1}`}
+                              required
+                              />
+                          ))}
+                      </div>
+                  </div>
+                  <Button type="submit" disabled={isSaving}>Add Flashcard</Button>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+
+          {activeView === 'preloaded' && (
+              <Card>
+                 <CardHeader>
+                    <CardTitle className="text-2xl font-headline flex items-center gap-2">
+                        <BookOpen />
+                        Select a Preloaded Quiz
+                    </CardTitle>
+                    <CardDescription>Choose from our library of expert-created quizzes to get started quickly.</CardDescription>
+                </CardHeader>
+                <CardContent className='space-y-4'>
+                    {isFetchingPreloaded ? (
+                        <div className="flex justify-center items-center p-8">
+                            <LoaderCircle className="animate-spin text-primary" />
+                        </div>
+                    ) : (
+                        <>
+                            <h3 className="font-bold text-lg">6th Grade Texas Science</h3>
+                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                                {preloadedQuizzes.map((quiz) => (
+                                    <Button key={quiz.id} variant="outline" onClick={() => handleSelectPreloaded(quiz)} className="justify-start">
+                                        {quiz.title}
+                                    </Button>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </CardContent>
+              </Card>
+          )}
+
+          {flashcards.length > 0 && (
+            <div className="mt-8">
+               <div className="space-y-2 mb-4">
+                <Label htmlFor="quiz-title-final">Quiz Title</Label>
+                <Input
+                  id="quiz-title-final"
+                  value={quizTitle}
+                  onChange={(e) => setQuizTitle(e.target.value)}
+                  placeholder="Enter a title for your quiz"
+                  required
+                  className="text-lg font-semibold"
+                />
+              </div>
+              <h2 className="text-xl font-bold font-headline mb-4">Your Flashcards ({flashcards.length})</h2>
+              <div className="space-y-4 max-h-96 overflow-y-auto pr-4">
+                {flashcards.map((card, index) => (
+                  <Card key={index} className="bg-muted/50">
+                    <CardContent className="p-4 flex justify-between items-start">
+                      <div>
+                        <p className="font-semibold">{index + 1}. {card.question}</p>
+                        <p className="text-sm text-green-600">Answer: {card.answer}</p>
+                        <p className='text-xs text-muted-foreground'>Options: {card.options.join(', ')}</p>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => removeFlashcard(index)} disabled={isSaving}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <Button 
+                onClick={handleSaveQuiz} 
+                className="mt-6 w-full" 
+                size="lg"
+                disabled={flashcards.length === 0 || isSaving || !quizTitle}>
+                {isSaving ? <LoaderCircle className="animate-spin" /> : <><Save className="mr-2"/> Save Quiz</>}
+              </Button>
+            </div>
+          )}
+        </section>
+      </main>
+    </div>
+  );
+}
+
+export default function CreateQuizPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><LoaderCircle className="w-12 h-12 animate-spin text-primary" /></div>}>
+      <CreateQuizPageContent />
+    </Suspense>
+  )
+}
+
+    

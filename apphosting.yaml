@@ -1,0 +1,11 @@
+# Settings to manage and configure a Firebase App Hosting backend.
+# https://firebase.google.com/docs/app-hosting/configure
+
+runConfig:
+  # The amount of CPU to allocate to each server instance.
+  # Valid values are any fractional number of CPUs from 0.5 to 2.
+  # https://firebase.google.com/docs/app-hosting/reference/yaml#cpu
+  cpu: 1
+  # Increase this value if you'd like to automatically spin up
+  # more instances in response to increased traffic.
+  maxInstances: 1

@@ -1,0 +1,44 @@
+[33me107fbf[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Initial commit (without secrets)
+[33m15c3777[m Couple of things -- now when I try to create a child, it says they have
+[33mf0133f8[m Can you add minor animations to the avatars/svgs when hovered over?
+[33m93c8dbb[m we have firebase storage set up, I thought? If that's not possible -- ho
+[33m473e1e5[m Node.js v22.19.0"} ERROR: failed to build: exit status 1 ERROR: failed t
+[33mf4b7147[m make sure age and grade level are both taken into account.
+[33mab36557[m Excellent -- when adding children, I want to be able to add date of birt
+[33m7bd0001[m still receiving the "only parents can add children" message
+[33m40057ed[m then yes, lets go ahead and create the achievement system. Include achie
+[33m7975a84[m Got it -- Shouldn't this be stored in our database?
+[33m7a5c657[m Lets implement it all
+[33m1ec67cf[m I'd like to add another parent as well -- would they need to sign up as
+[33md8e5d43[m My role already says admin
+[33m4e1f710[m Can we remove or alter the "Log In" button since we already have a log i
+[33med7a372[m the db has been created but do we need to set anything up?
+[33m0b07172[m okay I enabled it but no change
+[33m35bb16e[m I just republished. These were the errors in the console log. your most
+[33mcd39faf[m I'm pushing "Publish" now. I haven't even been able to see the dashboard
+[33m4833c2e[m this is from our console log: studio--studio-8091148765-b731e.us-central
+[33m5366654[m Excellent - that seemed to fix it. Now, I'm trying to login with my goog
+[33m02c59d9[m localhost is already in there
+[33m4a02ff6[m https://console.cloud.google.com/cloud-build/builds;region=us-central1/5
+[33m0cffe5f[m can you see build error logs?
+[33m7dcde76[m more errors
+[33mf45babc[m we have more errors
+[33mdab8bff[m why is my app not working?
+[33me447de0[m I love it - lets push forwards
+[33m30ec34a[m lets simplify our landing page -- its primarily going to be visited by 1
+[33me85339d[m when creating a flashcard set, lets make sure there's an option to choos
+[33m2d0da64[m Try fixing this error: `Runtime Error: Error: Cannot find the middleware
+[33m84208e8[m Lets do it
+[33m686e0ec[m Keep score history for all quizzes as well as study history for all flas
+[33mc7761a8[m This app needs to have two levels of user: administrator (parent) and us
+[33m2ad614c[m same with flashcards
+[33m7634709[m Users must be logged in before they can create or view quizzes / flashca
+[33m881759e[m Actually, I'd rather, as the parent, have the ability to create flashcar
+[33m5e5060e[m same with flashcards
+[33md67ed78[m I added our api key. I need the ability to add custom questions and flas
+[33mda704fd[m do we need a backend as well?
+[33m10db89d[m update the sign in method to use google
+[33m7daec68[m File changes
+[33m5253d97[m Set up Firebase Backend
+[33m6f632a5[m still going?
+[33md0bf285[m Initialized workspace with Firebase Studio
