@@ -47,7 +47,7 @@ function AdminDashboard({ user }: { user: AppUser }) {
             setData({ children: [], quizzes: [] });
         } else {
             setData({ 
-                children: result.children || [], 
+                children: (result.children as ChildWithAttempts[]) || [], 
                 quizzes: result.quizzes || [] 
             });
         }
@@ -114,7 +114,7 @@ function AdminDashboard({ user }: { user: AppUser }) {
                             <CardDescription>Click the button to add your first child and see their progress.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <AddChildDialog onChildAdded={fetchDashboardData} />
+                             <AddChildDialog onChildAdded={fetchDashboardData} />
                         </CardContent>
                     </Card>
                 ) : (
