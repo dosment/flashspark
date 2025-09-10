@@ -206,22 +206,44 @@ export async function addChildAction(childData: { email: string; name: string; g
     }
 
     try {
-        console.log(`[ACTION] addChildAction: Creating user with email: ${childData.email}`);
-        const newUser = await createUser({
-            email: childData.email,
-            name: childData.name,
-            gradeLevel: childData.gradeLevel,
-            dateOfBirth: childData.dateOfBirth,
-            role: 'child',
-            parentId: parent.uid
-        });
-        console.log(`[ACTION] addChildAction: Successfully created and linked child user ${newUser.uid}.`);
-        return { success: true, user: newUser };
+        const existingUser = await getUserByEmail(childData.email);
+
+        if (existingUser) {
+            console.log(`[ACTION] addChildAction: Found existing user with email ${childData.email}. UID: ${existingUser.uid}`);
+            if (existingUser.role === 'admin') {
+                return { error: 'This user is an admin and cannot be added as a child.' };
+            }
+            if (existingUser.parentId) {
+                return { error: 'This child is already assigned to a parent.' };
+            }
+            // User exists and is an unassigned child, so link them.
+            await setUserParent(existingUser.uid, parent.uid);
+            // Also update their profile info if it was provided
+            await updateUserProfile(existingUser.uid, {
+                gradeLevel: childData.gradeLevel,
+                dateOfBirth: childData.dateOfBirth,
+            })
+            console.log(`[ACTION] addChildAction: Successfully linked existing child user ${existingUser.uid} to parent ${parent.uid}.`);
+            return { success: true, user: { ...existingUser, parentId: parent.uid } };
+        } else {
+            console.log(`[ACTION] addChildAction: No existing user found. Creating new user with email: ${childData.email}`);
+            const newUser = await createUser({
+                email: childData.email,
+                name: childData.name,
+                gradeLevel: childData.gradeLevel,
+                dateOfBirth: childData.dateOfBirth,
+                role: 'child',
+                parentId: parent.uid
+            });
+            console.log(`[ACTION] addChildAction: Successfully created and linked child user ${newUser.uid}.`);
+            return { success: true, user: newUser };
+        }
 
     } catch (error: any) {
         console.error('[ACTION] addChildAction: Unexpected error', error);
-        if (error.code === 'auth/email-already-exists') {
-            return { error: 'A user with this email address already exists.' };
+        if (error.code === 'auth/email-already-exists' && !error.customMessage) {
+             // This case is less likely now but kept as a fallback. The `getUserByEmail` should catch most cases.
+            return { error: 'A user with this email address already exists. If they are an unassigned child, this tool can link them.' };
         }
         return { error: 'An unexpected error occurred while adding the child.' };
     }
@@ -317,3 +339,6 @@ export async function updateUserProfileAction(uid: string, data: Partial<AppUser
         return { error: 'Failed to update profile.' };
     }
 }
+
+
+    

@@ -54,8 +54,8 @@ export function AddChildDialog({ onChildAdded }: { onChildAdded: () => void }) {
 
     if (result.success) {
       toast({
-        title: 'Child Account Created!',
-        description: `An account for ${email} has been created. They can now log in with their Google account.`,
+        title: 'Child Account Linked!',
+        description: `An account for ${email} is now linked to you.`,
       });
       onChildAdded();
       setIsOpen(false);
@@ -78,15 +78,15 @@ export function AddChildDialog({ onChildAdded }: { onChildAdded: () => void }) {
       <DialogTrigger asChild>
         <Button>
           <UserPlus className="mr-2" />
-          Add Child
+          Add / Link Child
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleAddChild}>
           <DialogHeader>
-            <DialogTitle>Create Child Account</DialogTitle>
+            <DialogTitle>Add or Link Child Account</DialogTitle>
             <DialogDescription>
-                Enter your child's details to create an account for them. They can then sign in using that Google account.
+                Enter your child's email. If they have an account, it will be linked to you. If not, a new account will be created.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -138,10 +138,10 @@ export function AddChildDialog({ onChildAdded }: { onChildAdded: () => void }) {
               {isAdding ? (
                 <>
                   <LoaderCircle className="animate-spin mr-2" />
-                  Creating Account...
+                  Linking Account...
                 </>
               ) : (
-                'Create Child Account'
+                'Add or Link Child Account'
               )}
             </Button>
           </DialogFooter>
@@ -150,3 +150,6 @@ export function AddChildDialog({ onChildAdded }: { onChildAdded: () => void }) {
     </Dialog>
   );
 }
+
+
+    
