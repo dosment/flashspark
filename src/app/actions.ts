@@ -109,7 +109,8 @@ export async function getDashboardDataAction() {
                     return { ...child, attempts };
                 })
             );
-            return { children: childrenWithAttempts };
+            const quizzes = await getQuizzesForUser(user.uid);
+            return { children: childrenWithAttempts, quizzes };
         } else { // Child user
             if (!user.parentId) {
                 const attempts = await getQuizAttemptsForUser(user.uid);

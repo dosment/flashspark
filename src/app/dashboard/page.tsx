@@ -36,38 +36,24 @@ const getQuizIcon = (quizType: QuizType, title: string) => {
 
 
 function AdminDashboard({ user }: { user: AppUser }) {
-    const [children, setChildren] = useState<ChildWithAttempts[]>([]);
-    const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-    const [isFetchingQuizzes, setIsFetchingQuizzes] = useState(true);
-    const [isFetchingChildren, setIsFetchingChildren] = useState(true);
+    const [data, setData] = useState<{ children: ChildWithAttempts[], quizzes: Quiz[] }>({ children: [], quizzes: [] });
+    const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
 
-    const fetchQuizzes = useCallback(async () => {
-        setIsFetchingQuizzes(true);
-        const result = await getQuizzesAction();
-        if (result.quizzes) {
-            setQuizzes(result.quizzes);
-        } else if (result.error) {
-            toast({ variant: 'destructive', title: 'Error', description: result.error });
-        }
-        setIsFetchingQuizzes(false);
-    }, [toast]);
-
-    const fetchChildren = useCallback(async () => {
-        setIsFetchingChildren(true);
+    const fetchDashboardData = useCallback(async () => {
+        setIsLoading(true);
         const result = await getDashboardDataAction();
-        if (result.children) {
-            setChildren(result.children);
+        if (result.children && result.quizzes) {
+            setData({ children: result.children, quizzes: result.quizzes });
         } else if (result.error) {
             toast({ variant: 'destructive', title: 'Error', description: result.error });
         }
-        setIsFetchingChildren(false);
+        setIsLoading(false);
     }, [toast]);
 
     useEffect(() => {
-        fetchQuizzes();
-        fetchChildren();
-    }, [fetchQuizzes, fetchChildren]);
+        fetchDashboardData();
+    }, [fetchDashboardData]);
     
     return (
         <div className="space-y-12">
@@ -75,9 +61,9 @@ function AdminDashboard({ user }: { user: AppUser }) {
                 <div className="flex justify-between items-center mb-4">
                     <h1 className="text-3xl font-bold font-headline">My Quizzes</h1>
                 </div>
-                 {isFetchingQuizzes ? (
+                 {isLoading ? (
                      <div className="text-center"><LoaderCircle className="w-8 h-8 animate-spin text-primary mx-auto" /></div>
-                ) : quizzes.length === 0 ? (
+                ) : data.quizzes.length === 0 ? (
                      <Card className="text-center py-12">
                         <CardHeader>
                             <CardTitle>Create your first quiz!</CardTitle>
@@ -94,7 +80,7 @@ function AdminDashboard({ user }: { user: AppUser }) {
                     </Card>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {quizzes.map((quiz) => (
+                        {data.quizzes.map((quiz) => (
                             <Card key={quiz.id} className="flex flex-col">
                                 <CardHeader>
                                     <CardTitle>{quiz.title}</CardTitle>
@@ -118,27 +104,27 @@ function AdminDashboard({ user }: { user: AppUser }) {
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-3xl font-bold font-headline">Child Activity</h2>
                     <div className="flex gap-2">
-                        <AddChildDialog onChildAdded={fetchChildren} />
+                        <AddChildDialog onChildAdded={fetchDashboardData} />
                         <AddParentDialog onParentAdded={() => {}} />
                     </div>
                 </div>
-                 {isFetchingChildren ? (
+                 {isLoading ? (
                     <div className="text-center">
                         <LoaderCircle className="w-8 h-8 animate-spin text-primary mx-auto" />
                     </div>
-                ) : children.length === 0 ? (
+                ) : data.children.length === 0 ? (
                     <Card className="text-center py-12">
                         <CardHeader>
                             <CardTitle>No children found</CardTitle>
                             <CardDescription>Click the button to add your first child and see their progress.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <AddChildDialog onChildAdded={fetchChildren} />
+                            <AddChildDialog onChildAdded={fetchDashboardData} />
                         </CardContent>
                     </Card>
                 ) : (
                     <Accordion type="single" collapsible className="w-full">
-                        {children.map(child => (
+                        {data.children.map(child => (
                             <AccordionItem value={child.uid} key={child.uid}>
                                 <AccordionTrigger className="text-xl font-headline">{child.email}</AccordionTrigger>
                                 <AccordionContent>
