@@ -13,8 +13,6 @@ import type { Quiz, AppUser, QuizAttempt, QuizType, UserAchievement } from '@/li
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { format, formatDistanceToNow } from 'date-fns';
-import { AddChildDialog } from '@/components/AddChildDialog';
-import { AddParentDialog } from '@/components/AddParentDialog';
 import ScienceIcon from '@/components/icons/ScienceIcon';
 import HistoryIcon from '@/components/icons/HistoryIcon';
 import MathIcon from '@/components/icons/MathIcon';
@@ -357,3 +355,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+ 
