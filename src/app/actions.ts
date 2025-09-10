@@ -1,3 +1,4 @@
+
 'use server';
 
 import { provideHints } from '@/ai/flows/provide-hints-using-external-knowledge.ts';
@@ -17,7 +18,7 @@ import {
     updateUserProfile,
     createNewUser,
 } from '@/lib/firestore';
-import { Quiz, QuizAttempt, AppUser, QuizType, UserAchievement } from '@/lib/types';
+import { Quiz, QuizAttempt, AppUser, QuizType, UserAchievement, Achievement } from '@/lib/types';
 import { getCurrentUser } from '@/lib/auth-utils';
 import { ALL_ACHIEVEMENTS } from '@/lib/achievements';
 
@@ -148,8 +149,8 @@ export async function saveQuizAttemptAction(attemptData: Omit<QuizAttempt, 'id' 
     try {
         const attemptId = await saveQuizAttemptToDb(attemptData);
         // After saving, check for achievements
-        await checkAndAwardAchievementsAction(attemptData.userId);
-        return { success: true, attemptId };
+        const newAchievements = await checkAndAwardAchievementsAction(attemptData.userId);
+        return { success: true, attemptId, newAchievements };
     } catch (error) {
         console.error('Failed to save quiz attempt:', error);
         return { error: 'Failed to save the quiz attempt.' };
@@ -231,7 +232,8 @@ export async function addParentAction(parentEmail: string) {
     }
 }
 
-async function checkAndAwardAchievementsAction(userId: string) {
+async function checkAndAwardAchievementsAction(userId: string): Promise<Achievement[]> {
+    const newlyUnlocked: Achievement[] = [];
     try {
         const [attempts, unlocked] = await Promise.all([
             getQuizAttemptsForUser(userId),
@@ -239,14 +241,19 @@ async function checkAndAwardAchievementsAction(userId: string) {
         ]);
 
         const unlockedIds = new Set(unlocked.map(a => a.achievementId));
+        const allAchievementsMap = new Map(ALL_ACHIEVEMENTS.map(a => [a.id, a]));
 
         const checkAndUnlock = async (achievementId: string, condition: boolean) => {
             if (!unlockedIds.has(achievementId) && condition) {
                 await unlockAchievement(userId, achievementId);
+                const achievement = allAchievementsMap.get(achievementId);
+                if (achievement) {
+                    newlyUnlocked.push(achievement);
+                }
             }
         };
         
-        if (attempts.length === 0) return;
+        if (attempts.length === 0) return [];
         const latestAttempt = attempts[0];
 
         // --- Quiz-based Achievements ---
@@ -264,4 +271,7 @@ async function checkAndAwardAchievementsAction(userId: string) {
         console.error(`Failed to check/award achievements for user ${userId}:`, error);
         // We don't return an error to the user as this is a background process
     }
+    return newlyUnlocked;
 }
+
+    

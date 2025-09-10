@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import type { Flashcard, QuizAttempt, QuizType, AnsweredFlashcard } from '@/lib/types';
+import type { Flashcard, QuizAttempt, QuizType, AnsweredFlashcard, Achievement } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Lightbulb, LoaderCircle, Repeat, CheckCircle, XCircle } from 'lucide-react';
+import { Lightbulb, LoaderCircle, Repeat, CheckCircle, XCircle, Award } from 'lucide-react';
 import Confetti from '@/components/confetti';
 import { cn } from '@/lib/utils';
 import { getHintAction, saveQuizAttemptAction } from '@/app/actions';
@@ -208,6 +208,25 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
                 toast({ variant: 'destructive', title: 'Error', description: 'Could not save your quiz result.'})
             } else {
                 toast({ variant: 'default', title: 'Progress Saved', description: 'Your quiz results have been saved.'})
+            }
+            if (result.newAchievements && result.newAchievements.length > 0) {
+              result.newAchievements.forEach((achievement: Achievement) => {
+                setTimeout(() => {
+                  toast({
+                    title: 'Achievement Unlocked!',
+                    description: (
+                      <div className="flex items-center gap-3">
+                        <Award className="w-8 h-8 text-amber-500" />
+                        <div>
+                          <p className="font-bold">{achievement.name}</p>
+                          <p className="text-xs">{achievement.description}</p>
+                        </div>
+                      </div>
+                    ),
+                    duration: 5000,
+                  });
+                }, 500); // Stagger notifications slightly
+              });
             }
         }
     };
