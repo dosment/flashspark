@@ -1,47 +1,60 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+  
+    // Helper function to check if a user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if the user is an admin
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
 
-    // Users can read and write to their own user document
+    // Helper function to check if the user is a child
+    function isChild() {
+        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'child';
+    }
+
+    // Users can read/update their own profile.
+    // New users can be created during sign-up.
     match /users/{userId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null;
+      allow read, update: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn();
     }
-
-    // Children can read quizzes assigned by their parent.
-    // Parents can create, read, update, delete their own quizzes.
+    
+    // Quizzes can be read by any authenticated user (so children can see them).
+    // Quizzes can only be created or modified by admins.
     match /quizzes/{quizId} {
-      allow read: if request.auth != null && (
-        resource.data.userId == request.auth.uid || 
-        resource.data.userId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.parentId
-      );
-      allow create, update, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
-    }
-    
-    // Users can read preloaded quizzes
-    match /preloadedQuizzes/{quizId} {
-      allow read: if request.auth != null;
-      // Prevent write access for all users
-      allow write: if false;
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
-    // Users can write their own quiz attempts.
-    // Parents can read their children's attempts.
-    match /quizAttempts/{attemptId} {
-       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-       allow read: if request.auth != null && (
-         resource.data.userId == request.auth.uid || 
-         get(/databases/$(database)/documents/users/$(resource.data.userId)).data.parentId == request.auth.uid
-       );
+    // Preloaded quizzes can be read by any authenticated user.
+    // They should be managed from the Firebase console or a seeding script, so no client writes.
+    match /preloadedQuizzes/{quizId} {
+        allow read: if isSignedIn();
+        allow write: if false;
     }
-    
-    // Achievements can be read by the user who owns them.
-    // Achievements are written by server-side logic, not clients.
+
+    // Quiz attempts can be created by any authenticated user (children).
+    // An attempt can be read by the user who created it, or by their parent.
+    match /quizAttempts/{attemptId} {
+       allow create: if isSignedIn();
+       allow read: if isSignedIn() && 
+                      (request.auth.uid == resource.data.userId || 
+                       get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      // Attempts should not be updatable or deletable from the client.
+      allow update, delete: if false;
+    }
+
+    // Achievements can be read by anyone (so parents can see child achievements).
+    // They are only created on the server, so no client writes.
     match /userAchievements/{achievementId} {
-        allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-        allow write: if false; // Only server-side logic can unlock achievements
+        allow read: if isSignedIn();
+        allow write: if false;
     }
   }
 }
