@@ -63,7 +63,6 @@ export async function getQuizzesAction() {
     }
     
     // This action is primarily for the parent to see their own quizzes.
-    // Children's quizzes are loaded via getDashboardDataAction.
     const userIdToFetch = currentUser.uid;
     
     try {
@@ -250,5 +249,3 @@ async function checkAndAwardAchievementsAction(userId: string): Promise<Achievem
     }
     return newlyUnlocked;
 }
-
-    

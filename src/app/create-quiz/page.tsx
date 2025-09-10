@@ -45,11 +45,12 @@ function CreateQuizPageContent() {
   }, [isAiMode]);
 
   useEffect(() => {
+    // We still redirect on the client-side as a UX convenience,
+    // but the critical security check is now on the server action.
     if (!loading && (!user || user.role !== 'admin')) {
-      toast({ variant: 'destructive', title: 'Unauthorized', description: 'Only parents can create quizzes.' });
       router.push('/dashboard');
     }
-  }, [user, loading, router, toast]);
+  }, [user, loading, router]);
 
   const handleAddFlashcard = (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,7 +153,7 @@ function CreateQuizPageContent() {
     setFlashcards(flashcards.filter((_, i) => i !== index));
   };
   
-  if (loading || !user) {
+  if (loading || !user || user.role !== 'admin') {
     return (
        <div className="flex flex-col items-center justify-center min-h-screen text-center">
         <LoaderCircle className="w-12 h-12 animate-spin text-primary mb-4" />
@@ -161,9 +162,6 @@ function CreateQuizPageContent() {
         </h1>
       </div>
     );
-  }
-   if (user.role !== 'admin') {
-    return null; // Redirect is handled by useEffect
   }
   
   return (
