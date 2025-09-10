@@ -7,12 +7,12 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, PlusCircle, Play, Eye, BookOpen, User } from 'lucide-react';
+import { LoaderCircle, Play, Eye, BookOpen, User } from 'lucide-react';
 import { getDashboardDataAction } from '@/app/actions';
 import type { Quiz, AppUser, QuizAttempt, QuizType, UserAchievement } from '@/lib/types';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { AddChildDialog } from '@/components/AddChildDialog';
 import { AddParentDialog } from '@/components/AddParentDialog';
 import ScienceIcon from '@/components/icons/ScienceIcon';
@@ -20,6 +20,15 @@ import HistoryIcon from '@/components/icons/HistoryIcon';
 import MathIcon from '@/components/icons/MathIcon';
 import { ALL_ACHIEVEMENTS } from '@/lib/achievements';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip as ChartTooltip, XAxis, YAxis } from 'recharts';
+import { ChartContainer } from '@/components/ui/chart';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
 
 type ChildWithAttempts = AppUser & { attempts: QuizAttempt[] };
 
@@ -118,35 +127,73 @@ function AdminDashboard({ user }: { user: AppUser }) {
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="space-y-4">
-                        {data.children.map(child => (
-                           <Card key={child.uid}>
-                               <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 font-headline">
-                                        <User className="text-primary"/>
-                                        {child.email}
-                                    </CardTitle>
-                               </CardHeader>
-                               <CardContent>
-                                    {child.attempts.length > 0 ? (
-                                        <div className="space-y-2">
-                                            <h4 className="font-semibold">Recent Quiz History:</h4>
-                                            <ul className='list-disc pl-5'>
-                                                {child.attempts.slice(0, 5).map(attempt => (
-                                                    <li key={attempt.id} className="text-sm text-muted-foreground">
-                                                        {formatDistanceToNow(new Date(attempt.completedAt.seconds * 1000), { addSuffix: true })} - 
-                                                        "{attempt.quizTitle}": {attempt.score}/{attempt.totalQuestions}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    ) : (
-                                        <p className="text-muted-foreground">No quiz attempts recorded yet.</p>
-                                    )}
-                               </CardContent>
-                           </Card>
-                        ))}
-                    </div>
+                    <Carousel
+                        opts={{
+                            align: 'start',
+                        }}
+                        className="w-full"
+                        >
+                        <CarouselContent>
+                            {data.children.map(child => {
+                                const chartData = child.attempts.slice(0, 5).reverse().map(attempt => ({
+                                    name: format(new Date(attempt.completedAt.seconds * 1000), 'MMM d'),
+                                    score: (attempt.score / attempt.totalQuestions) * 100,
+                                    quizTitle: attempt.quizTitle
+                                }));
+
+                                return (
+                                <CarouselItem key={child.uid} className="md:basis-1/2 lg:basis-1/3">
+                                    <div className="p-1">
+                                    <Card>
+                                        <CardHeader>
+                                                <CardTitle className="flex items-center gap-2 font-headline">
+                                                    <User className="text-primary"/>
+                                                    {child.email}
+                                                </CardTitle>
+                                                <CardDescription>
+                                                    {child.attempts.length > 0 ? `Last active: ${formatDistanceToNow(new Date(child.attempts[0].completedAt.seconds * 1000), { addSuffix: true })}` : 'No activity yet.'}
+                                                </CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                                {child.attempts.length > 0 ? (
+                                                    <ChartContainer config={{
+                                                        score: {
+                                                          label: 'Score',
+                                                          color: 'hsl(var(--primary))',
+                                                        },
+                                                      }} className="h-48 w-full">
+                                                        <BarChart accessibilityLayer data={chartData} margin={{ top: 20, right: 20, left: -10, bottom: 0 }}>
+                                                            <CartesianGrid vertical={false} />
+                                                            <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
+                                                            <YAxis domain={[0, 100]} unit="%" />
+                                                            <ChartTooltip
+                                                                cursor={false}
+                                                                content={({ active, payload, label }) => active && payload?.length && (
+                                                                    <div className="bg-background p-2 shadow-lg rounded-lg border">
+                                                                        <p className="font-bold">{label}</p>
+                                                                        <p className="text-sm text-muted-foreground">{payload[0].payload.quizTitle}</p>
+                                                                        <p className="text-sm" style={{ color: 'hsl(var(--primary))' }}>Score: {Math.round(payload[0].value as number)}%</p>
+                                                                    </div>
+                                                                )}
+                                                            />
+                                                            <Bar dataKey="score" fill="var(--color-score)" radius={4} />
+                                                        </BarChart>
+                                                    </ChartContainer>
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground">
+                                                        <BookOpen className="w-12 h-12 mb-2" />
+                                                        <p>No quiz attempts recorded yet.</p>
+                                                    </div>
+                                                )}
+                                        </CardContent>
+                                    </Card>
+                                    </div>
+                                </CarouselItem>
+                            )})}
+                        </CarouselContent>
+                        <CarouselPrevious />
+                        <CarouselNext />
+                    </Carousel>
                 )}
             </div>
         </div>

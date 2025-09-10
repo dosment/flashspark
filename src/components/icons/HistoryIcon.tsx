@@ -48,5 +48,3 @@ export default function HistoryIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-
-    

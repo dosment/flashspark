@@ -23,5 +23,3 @@ export default function MathIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-
-    

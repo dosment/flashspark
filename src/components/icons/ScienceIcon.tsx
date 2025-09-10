@@ -46,5 +46,3 @@ export default function ScienceIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-
-    
