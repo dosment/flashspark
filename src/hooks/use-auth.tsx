@@ -27,10 +27,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 async function createUserProfile(firebaseUser: FirebaseAuthUser): Promise<AppUser> {
     try {
+        // New users always default to admin (parent) role.
+        // They can be linked as a child later by another parent.
         const newUser: AppUser = {
             uid: firebaseUser.uid,
             email: firebaseUser.email!.toLowerCase(),
-            role: 'admin', // New users default to parent/admin.
+            role: 'admin', 
             avatarId: 'avatar-1'
         };
         
@@ -158,5 +160,3 @@ export function useAuth() {
   }
   return context;
 }
-
-    

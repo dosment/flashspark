@@ -137,11 +137,13 @@ export async function saveQuizAttempt(attemptData: Omit<QuizAttempt, 'id' | 'com
 
 export async function setUserRole(uid: string, role: 'admin' | 'child'): Promise<void> {
     const userDocRef = db.collection('users').doc(uid);
-    await userDocRef.update({
-        role: role,
-        // Also clear parentId if they are becoming an admin
-        parentId: role === 'admin' ? FieldValue.delete() : undefined
-    });
+    const updateData: { role: 'admin' | 'child'; parentId?: FieldValue } = { role };
+
+    if (role === 'admin') {
+        updateData.parentId = FieldValue.delete();
+    }
+    
+    await userDocRef.update(updateData);
 }
 
 // --- Achievements ---

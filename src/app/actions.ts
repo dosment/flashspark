@@ -62,11 +62,8 @@ export async function getQuizzesAction() {
         return { error: 'You must be logged in to view quizzes.' };
     }
     
-    // This action is primarily for the parent to see their own quizzes.
-    const userIdToFetch = currentUser.uid;
-    
     try {
-        const quizzes = await getQuizzesForUser(userIdToFetch);
+        const quizzes = await getQuizzesForUser(currentUser.uid);
         return { quizzes };
     } catch (error) {
         console.error('Failed to get quizzes:', error);
@@ -124,6 +121,20 @@ export async function getDashboardDataAction() {
     }
 }
 
+export async function getManagedUsersAction() {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'admin') {
+        return { error: 'You must be an admin to manage users.' };
+    }
+    try {
+        const children = await getChildrenForParent(user.uid);
+        return { children };
+    } catch (error) {
+        console.error('Failed to get managed users:', error);
+        return { error: 'Could not fetch managed users.' };
+    }
+}
+
 export async function saveQuizAttemptAction(attemptData: Omit<QuizAttempt, 'id' | 'completedAt'>) {
     try {
         const attemptId = await saveQuizAttemptToDb(attemptData);
@@ -168,6 +179,9 @@ export async function addChildAction(childEmail: string) {
 
         // Link the child to the parent.
         await setUserParent(childUser.uid, parent.uid);
+        // Explicitly set the role to child
+        await setUserRole(childUser.uid, 'child');
+
 
         return { success: true };
     } catch (error: any) {

@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BrainCircuit, LogIn, LogOut, User, LayoutDashboard, PlusCircle } from 'lucide-react';
+import { BrainCircuit, LogIn, LogOut, User, LayoutDashboard, PlusCircle, Settings } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from './ui/button';
 import {
@@ -79,9 +79,9 @@ export default function Header() {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href="/profile">
-                            <User className="mr-2 h-4 w-4" />
-                            <span>Profile</span>
+                           <Link href="/settings">
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>Settings</span>
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -101,7 +101,7 @@ export default function Header() {
                         </Link>
                      </Button>
                      <Button asChild variant="ghost" className="relative h-10 w-10 rounded-full">
-                       <Link href="/profile">
+                       <Link href="/settings">
                           <Avatar className="h-10 w-10">
                             {UserAvatar ? (
                               <UserAvatar className="w-full h-full" />
