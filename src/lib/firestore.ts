@@ -26,7 +26,7 @@ export async function createUser(userData: {email: string, name?: string, role: 
         email: userData.email.toLowerCase(),
         role: userData.role,
         avatarId: 'avatar-1', // Default avatar
-        ...(userData.name && { name: userData.name }),
+        name: userData.name || userData.email, // Default name to email if not provided
         ...(userData.parentId && { parentId: userData.parentId }),
         ...(userData.gradeLevel && { gradeLevel: userData.gradeLevel }),
         ...(userData.dateOfBirth && { dateOfBirth: userData.dateOfBirth }),
@@ -145,6 +145,30 @@ export async function getChildrenForParent(parentId: string): Promise<AppUser[]>
     };
     return users;
 }
+
+// Get all admins/parents
+export async function getAdmins(): Promise<AppUser[]> {
+    const users: AppUser[] = [];
+    const q = db.collection('users').where('role', '==', 'admin');
+    const querySnapshot = await q.get();
+
+    for (const doc of querySnapshot.docs) {
+        const userData = doc.data() as AppUser;
+        try {
+            const authUser = await auth.getUser(doc.id);
+            userData.lastLogin = authUser.metadata.lastSignInTime;
+        } catch (error) {
+            console.warn(`[DB] Could not fetch auth data for user ${doc.id}`, error);
+            userData.lastLogin = 'N/A';
+        }
+        users.push({
+            uid: doc.id,
+            ...userData
+        });
+    };
+    return users;
+}
+
 
 // Get quiz attempts for a specific user
 export async function getQuizAttemptsForUser(userId: string): Promise<QuizAttempt[]> {

@@ -8,7 +8,7 @@ import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, CheckCircle, Award, User, Users, Calendar, Mail, GraduationCap } from 'lucide-react';
+import { LoaderCircle, CheckCircle, Award, User, Users, Calendar, Mail, GraduationCap, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ALL_AVATARS, getAvatar } from '@/lib/avatars';
 import { updateUserProfile } from '@/lib/firestore';
@@ -187,7 +187,7 @@ function ProfileTab() {
 
 
 function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
-  const [users, setUsers] = useState<{ children: AppUser[] }>({ children: [] });
+  const [users, setUsers] = useState<{ children: AppUser[], admins: AppUser[] }>({ children: [], admins: [] });
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -198,9 +198,9 @@ function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
     if (result.error) {
       console.error('[UserManagementTab] Error fetching users:', result.error);
       toast({ variant: 'destructive', title: 'Error', description: result.error });
-    } else if (result.children) {
-      console.log(`[UserManagementTab] Found ${result.children.length} managed users.`);
-      setUsers({ children: result.children });
+    } else {
+      console.log(`[UserManagementTab] Found ${result.children?.length || 0} children and ${result.admins?.length || 0} admins.`);
+      setUsers({ children: result.children || [], admins: result.admins || [] });
     }
     setIsLoading(false);
   }, [toast]);
@@ -215,20 +215,56 @@ function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
       onUsersChanged();
   }
 
-  const { children } = users;
+  const { children, admins } = users;
+
+  const UserListItem = ({ user }: { user: AppUser }) => {
+    const UserAvatar = getAvatar(user.avatarId);
+    return (
+        <div className={cn("flex items-start gap-4 p-4")}>
+            <Avatar className="mt-1">
+                {UserAvatar ? <UserAvatar /> : <AvatarFallback>{user.name ? user.name[0] : user.email?.[0].toUpperCase()}</AvatarFallback>}
+            </Avatar>
+            <div className='flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2'>
+                <div className="font-semibold text-lg md:col-span-2">{user.name || 'No Name'}</div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Mail className="w-4 h-4"/>
+                    <span>{user.email}</span>
+                </div>
+                 {user.role === 'child' && (
+                     <>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <GraduationCap className="w-4 h-4"/>
+                            <span>{user.gradeLevel || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="w-4 h-4"/>
+                            <span>Born: {user.dateOfBirth ? format(new Date(user.dateOfBirth), 'PPP') : 'N/A'}</span>
+                        </div>
+                     </>
+                 )}
+                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <User className="w-4 h-4"/>
+                    <p>
+                        Last Login: {user.lastLogin && user.lastLogin !== 'N/A' ? formatDistanceToNow(new Date(user.lastLogin), { addSuffix: true }) : 'Never'}
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+  };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>User Management</CardTitle>
         <CardDescription>
-          Manage child accounts linked to you and add other parents.
+          Manage child accounts and other parent accounts in your group.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Child Accounts</h3>
+            <h3 className="text-lg font-medium flex items-center gap-2"><Users />Child Accounts</h3>
             <AddChildDialog onChildAdded={handleUserAdded} />
           </div>
           {isLoading ? (
@@ -236,38 +272,8 @@ function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
                 <LoaderCircle className="animate-spin text-primary" />
             </div>
           ) : children.length > 0 ? (
-            <div className="border rounded-md">
-                {children.map((child, index) => {
-                    const ChildAvatar = getAvatar(child.avatarId);
-                    return (
-                        <div key={child.uid} className={cn("flex items-start gap-4 p-4", index !== children.length -1 && 'border-b')}>
-                            <Avatar className="mt-1">
-                                {ChildAvatar ? <ChildAvatar /> : <AvatarFallback>{child.name ? child.name[0] : child.email?.[0].toUpperCase()}</AvatarFallback>}
-                            </Avatar>
-                            <div className='flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2'>
-                                <div className="font-semibold text-lg md:col-span-2">{child.name || 'No Name'}</div>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Mail className="w-4 h-4"/>
-                                    <span>{child.email}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <GraduationCap className="w-4 h-4"/>
-                                    <span>{child.gradeLevel || 'N/A'}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Calendar className="w-4 h-4"/>
-                                     <span>Born: {child.dateOfBirth ? format(new Date(child.dateOfBirth), 'PPP') : 'N/A'}</span>
-                                </div>
-                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <User className="w-4 h-4"/>
-                                    <p>
-                                        Last Login: {child.lastLogin && child.lastLogin !== 'N/A' ? formatDistanceToNow(new Date(child.lastLogin), { addSuffix: true }) : 'Never'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )
-                })}
+            <div className="border rounded-md divide-y">
+                {children.map((child) => <UserListItem key={child.uid} user={child} />)}
             </div>
           ) : (
             <div className="text-center text-sm text-muted-foreground p-8 border rounded-md border-dashed">
@@ -278,12 +284,23 @@ function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
         </div>
         <div className="space-y-4">
            <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Parent Accounts</h3>
+            <h3 className="text-lg font-medium flex items-center gap-2"><Shield />Parent Accounts</h3>
             <AddParentDialog onParentAdded={handleUserAdded} />
           </div>
-           <p className="text-sm text-muted-foreground">
-            You can grant parent/admin permissions to other users. They will be able to create quizzes and manage children.
-          </p>
+           {isLoading ? (
+             <div className="flex justify-center items-center p-4">
+                <LoaderCircle className="animate-spin text-primary" />
+            </div>
+          ) : admins.length > 0 ? (
+            <div className="border rounded-md divide-y">
+                {admins.map((admin) => <UserListItem key={admin.uid} user={admin} />)}
+            </div>
+          ) : (
+            <div className="text-center text-sm text-muted-foreground p-8 border rounded-md border-dashed">
+                <p>You are the only parent in this group.</p>
+                <p>Click "Add Parent" to invite another admin.</p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -295,13 +312,7 @@ export default function SettingsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  // This is a dummy function for now, but can be used to trigger dashboard refresh
   const handleUsersChanged = useCallback(() => {
-    // This callback is currently a placeholder to show how you would
-    // trigger a refresh on another component. In a real-world scenario
-    // with a more complex state management (like Zustand or Redux),
-    // this would dispatch a global action to refetch dashboard data.
-    // For our current setup, the effect is handled within the UserManagementTab itself.
     console.log("[SettingsPage] A user was added/changed, dashboard data should be refreshed if it were visible.");
   }, []);
 
@@ -343,7 +354,6 @@ export default function SettingsPage() {
             </TabsContent>
           </Tabs>
         ) : (
-            // Child view has no tabs, just profile
             <ProfileTab />
         )}
       </main>

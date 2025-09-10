@@ -7,6 +7,7 @@ import {
     getQuizzesForUser, 
     getQuiz,
     getChildrenForParent,
+    getAdmins,
     getQuizAttemptsForUser,
     saveQuizAttempt as saveQuizAttemptToDb,
     setUserParent,
@@ -160,12 +161,18 @@ export async function getManagedUsersAction() {
         return { error: 'You must be an admin to manage users.' };
     }
     try {
-        console.log('[ACTION] getManagedUsersAction: Fetching children for parent:', user.uid);
-        const children = await getChildrenForParent(user.uid);
-        console.log(`[ACTION] getManagedUsersAction: Success, found ${children.length} children.`);
-        return { children };
+        console.log('[ACTION] getManagedUsersAction: Fetching children and admins for parent:', user.uid);
+        const [children, admins] = await Promise.all([
+            getChildrenForParent(user.uid),
+            getAdmins()
+        ]);
+        // Filter out the current user from the admins list
+        const otherAdmins = admins.filter(admin => admin.uid !== user.uid);
+
+        console.log(`[ACTION] getManagedUsersAction: Success, found ${children.length} children and ${otherAdmins.length} other admins.`);
+        return { children, admins: otherAdmins };
     } catch (error) {
-        console.error('[ACTION] getManagedUsersAction: Error fetching children', error);
+        console.error('[ACTION] getManagedUsersAction: Error fetching managed users', error);
         return { error: 'Could not fetch managed users.' };
     }
 }
