@@ -21,18 +21,18 @@ export type AvatarInfo = {
 };
 
 export const ALL_AVATARS: AvatarInfo[] = [
-    { id: 'avatar-1', component: Avatar1 },
-    { id: 'avatar-2', component: Avatar2 },
-    { id: 'avatar-3', component: Avatar3 },
-    { id: 'avatar-4', component: Avatar4 },
-    { id: 'avatar-5', component: Avatar5 },
-    { id: 'avatar-6', component: Avatar6 },
-    { id: 'avatar-7', component: Avatar7 },
-    { id: 'avatar-8', component: Avatar8 },
-    { id: 'avatar-9', component: Avatar9 },
-    { id: 'avatar-10', component: Avatar10 },
-    { id: 'avatar-11', component: Avatar11 },
-    { id: 'avatar-12', component: Avatar12 },
+    { id: 'avatar-1', component: Avatar1 }, // Rocket
+    { id: 'avatar-2', component: Avatar2 }, // Star
+    { id: 'avatar-3', component: Avatar3 }, // Cat
+    { id: 'avatar-4', component: Avatar4 }, // Robot
+    { id: 'avatar-5', component: Avatar5 }, // Book
+    { id: 'avatar-6', component: Avatar6 }, // Lightbulb
+    { id: 'avatar-7', component: Avatar7 }, // Planet
+    { id: 'avatar-8', component: Avatar8 }, // Ghost
+    { id: 'avatar-9', component: Avatar9 }, // Controller
+    { id: 'avatar-10', component: Avatar10 },// Pizza
+    { id: 'avatar-11', component: Avatar11 },// Winky Face
+    { id: 'avatar-12', component: Avatar12 },// Ooh Face
 ];
 
 const avatarMap = new Map(ALL_AVATARS.map(avatar => [avatar.id, avatar.component]));

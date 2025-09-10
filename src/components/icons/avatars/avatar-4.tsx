@@ -1,4 +1,3 @@
-
 import type { SVGProps } from "react";
 
 export default function Avatar4(props: SVGProps<SVGSVGElement>) {
@@ -6,23 +5,30 @@ export default function Avatar4(props: SVGProps<SVGSVGElement>) {
     <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
         <style>
             {`
-                .eye-blob-left {
-                    animation: eye-blob-bob 2.5s ease-in-out infinite;
+                .robot-antenna {
+                    animation: robot-antenna-wobble 4s ease-in-out infinite;
+                    transform-origin: bottom center;
                 }
-                .eye-blob-right {
-                    animation: eye-blob-bob 2.5s ease-in-out infinite;
-                    animation-delay: 0.3s;
+                .robot-eye-light {
+                    animation: robot-eye-blink 2s steps(1, start) infinite;
                 }
-                @keyframes eye-blob-bob {
-                    0%, 100% { transform: translateY(0); }
-                    50% { transform: translateY(-3px); }
+                @keyframes robot-antenna-wobble {
+                    0%, 100% { transform: rotate(0deg); }
+                    25% { transform: rotate(10deg); }
+                    75% { transform: rotate(-10deg); }
+                }
+                @keyframes robot-eye-blink {
+                    0%, 100% { fill: #F87171; }
+                    50% { fill: #DC2626; }
                 }
             `}
         </style>
-        <rect width="64" height="64" rx="32" fill="#BFDBFE"/>
-        <path d="M24 44C24 44 26.6274 48 32 48C37.3726 48 40 44 40 44" stroke="#1E40AF" strokeWidth="4" strokeLinecap="round"/>
-        <path d="M24 28C24 25.7909 25.7909 24 28 24V24C30.2091 24 32 25.7909 32 28V32C32 34.2091 30.2091 36 28 36V36C25.7909 36 24 34.2091 24 32V28Z" fill="#1E40AF" className="eye-blob-left"/>
-        <path d="M32 28C32 25.7909 33.7909 24 36 24V24C38.2091 24 40 25.7909 40 28V32C40 34.2091 38.2091 36 36 36V36C33.7909 36 32 34.2091 32 32V28Z" fill="#1E40AF" className="eye-blob-right"/>
+        <rect x="14" y="20" width="36" height="28" rx="8" fill="#D1D5DB" stroke="#4B5563" strokeWidth="4"/>
+        <rect x="22" y="30" width="20" height="8" rx="2" fill="#9CA3AF" stroke="#4B5563" strokeWidth="4"/>
+        <path d="M32 20V14" stroke="#4B5563" strokeWidth="4" strokeLinecap="round" className="robot-antenna"/>
+        <circle cx="32" cy="12" r="3" fill="#F87171" stroke="#4B5563" strokeWidth="2" className="robot-eye-light"/>
+        <circle cx="24" cy="28" r="2" fill="#4B5563"/>
+        <circle cx="40" cy="28" r="2" fill="#4B5563"/>
     </svg>
   );
 }
