@@ -1,4 +1,3 @@
-
 import type { User as FirebaseAuthUser } from 'firebase/auth';
 import type { LucideIcon } from 'lucide-react';
 import type { Timestamp } from 'firebase/firestore';
@@ -28,13 +27,6 @@ export type Quiz = {
   quizType: QuizType;
   createdAt: Timestamp;
 };
-
-export type PreloadedQuiz = {
-  id: string;
-  title:string;
-  flashcards: Flashcard[];
-  quizType: QuizType;
-}
 
 export type AppUser = {
     uid: string;
@@ -77,5 +69,3 @@ export type UserAchievement = {
     achievementId: string;
     unlockedAt: any;
 };
-
-    

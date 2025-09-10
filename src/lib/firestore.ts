@@ -3,7 +3,7 @@
 
 import { getFirebaseAdminApp, getFirestoreAdmin } from './firebase-admin';
 import { serverTimestamp, FieldValue, Timestamp } from 'firebase-admin/firestore';
-import type { Quiz, AppUser, QuizAttempt, PreloadedQuiz, UserAchievement } from './types';
+import type { Quiz, AppUser, QuizAttempt, UserAchievement } from './types';
 import { auth as adminAuth } from 'firebase-admin';
 
 // Type for the data to be saved to Firestore, excluding the ID.
@@ -75,27 +75,6 @@ export async function getQuizzesForUser(userId: string): Promise<Quiz[]> {
 
   return quizzes;
 }
-
-
-// Get all preloaded quizzes
-export async function getPreloadedQuizzes(): Promise<PreloadedQuiz[]> {
-  const quizzes: PreloadedQuiz[] = [];
-  const q = db.collection('preloadedQuizzes').orderBy('title');
-  
-  const querySnapshot = await q.get();
-  querySnapshot.forEach((doc) => {
-    const data = doc.data();
-    quizzes.push({
-      id: doc.id,
-      title: data.title,
-      flashcards: data.flashcards,
-      quizType: data.quizType,
-    });
-  });
-
-  return quizzes;
-}
-
 
 // Get a single quiz by its ID
 export async function getQuiz(quizId: string): Promise<Quiz | null> {

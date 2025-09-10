@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense, useEffect, useCallback } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,12 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Header from '@/components/Header';
-import type { Flashcard, QuizType, PreloadedQuiz, AppUser } from '@/lib/types';
-import { X, LoaderCircle, Wand2, Save, BookOpen, FileText } from 'lucide-react';
+import type { Flashcard, QuizType, AppUser } from '@/lib/types';
+import { X, LoaderCircle, Wand2, Save, FileText } from 'lucide-react';
 import { generateFlashcards } from '@/ai/flows/generate-flashcards-from-topic';
 import { generateFlashcardsFromText } from '@/ai/flows/generate-flashcards-from-text';
 import { useAuth } from '@/hooks/use-auth';
-import { saveQuizAction, getPreloadedQuizzesAction } from '@/app/actions';
+import { saveQuizAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
@@ -35,29 +35,8 @@ function CreateQuizPageContent() {
   const [aiText, setAiText] = useState('');
   const [quizTitle, setQuizTitle] = useState('');
   const [quizType, setQuizType] = useState<QuizType>('standard');
-  const [activeView, setActiveView] = useState<'manual' | 'aiTopic' | 'aiText' | 'preloaded'>('manual');
+  const [activeView, setActiveView] = useState<'manual' | 'aiTopic' | 'aiText'>('manual');
   
-  const [preloadedQuizzes, setPreloadedQuizzes] = useState<PreloadedQuiz[]>([]);
-  const [isFetchingPreloaded, setIsFetchingPreloaded] = useState(false);
-
-
-  const fetchPreloadedQuizzes = useCallback(async () => {
-    setIsFetchingPreloaded(true);
-    const result = await getPreloadedQuizzesAction();
-    if (result.quizzes) {
-      setPreloadedQuizzes(result.quizzes);
-    } else {
-      toast({ variant: 'destructive', title: 'Error', description: result.error });
-    }
-    setIsFetchingPreloaded(false);
-  }, [toast]);
-  
-  useEffect(() => {
-    if (activeView === 'preloaded') {
-      fetchPreloadedQuizzes();
-    }
-  }, [activeView, fetchPreloadedQuizzes]);
-
   useEffect(() => {
     if (isAiMode) {
       setActiveView('aiTopic');
@@ -171,13 +150,6 @@ function CreateQuizPageContent() {
     setFlashcards(flashcards.filter((_, i) => i !== index));
   };
   
-  const handleSelectPreloaded = (quiz: { title: string; flashcards: Flashcard[] }) => {
-    setQuizTitle(quiz.title);
-    setFlashcards(quiz.flashcards);
-    setQuizType('vocabulary');
-    toast({ title: "Quiz Loaded!", description: `Loaded "${quiz.title}" with ${quiz.flashcards.length} flashcards.`})
-  }
-
   if (loading || !user) {
     return (
        <div className="flex flex-col items-center justify-center min-h-screen text-center">
@@ -201,7 +173,6 @@ function CreateQuizPageContent() {
                 <Button variant={activeView === 'manual' ? 'default' : 'outline'} onClick={() => setActiveView('manual')}>Create Manually</Button>
                 <Button variant={activeView === 'aiTopic' ? 'default' : 'outline'} onClick={() => {setActiveView('aiTopic'); setQuizType('vocabulary')}}>Generate from Topic</Button>
                 <Button variant={activeView === 'aiText' ? 'default' : 'outline'} onClick={() => {setActiveView('aiText'); setQuizType('standard')}}>Generate from Text</Button>
-                <Button variant={activeView === 'preloaded' ? 'default' : 'outline'} onClick={() => {setActiveView('preloaded'); setQuizType('vocabulary')}}>Use Preloaded</Button>
             </div>
 
          {activeView === 'aiTopic' && (
@@ -330,36 +301,6 @@ function CreateQuizPageContent() {
                 </form>
               </CardContent>
             </Card>
-          )}
-
-          {activeView === 'preloaded' && (
-              <Card>
-                 <CardHeader>
-                    <CardTitle className="text-2xl font-headline flex items-center gap-2">
-                        <BookOpen />
-                        Select a Preloaded Quiz
-                    </CardTitle>
-                    <CardDescription>Choose from our library of expert-created quizzes to get started quickly.</CardDescription>
-                </CardHeader>
-                <CardContent className='space-y-4'>
-                    {isFetchingPreloaded ? (
-                        <div className="flex justify-center items-center p-8">
-                            <LoaderCircle className="animate-spin text-primary" />
-                        </div>
-                    ) : (
-                        <>
-                            <h3 className="font-bold text-lg">6th Grade Texas Science</h3>
-                            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                                {preloadedQuizzes.map((quiz) => (
-                                    <Button key={quiz.id} variant="outline" onClick={() => handleSelectPreloaded(quiz)} className="justify-start">
-                                        {quiz.title}
-                                    </Button>
-                                ))}
-                            </div>
-                        </>
-                    )}
-                </CardContent>
-              </Card>
           )}
 
           {flashcards.length > 0 && (

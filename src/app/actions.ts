@@ -12,7 +12,6 @@ import {
     setUserParent,
     getUserByEmail,
     setUserRole,
-    getPreloadedQuizzes,
     getUserAchievements,
     unlockAchievement,
     updateUserProfile,
@@ -82,22 +81,6 @@ export async function getQuizzesAction() {
         return { error: 'Could not fetch your quizzes.' };
     }
 }
-
-export async function getPreloadedQuizzesAction() {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-        return { error: 'You must be logged in to view pre-loaded quizzes.' };
-    }
-
-    try {
-        const quizzes = await getPreloadedQuizzes();
-        return { quizzes };
-    } catch (error) {
-        console.error('Failed to get pre-loaded quizzes:', error);
-        return { error: 'Could not fetch pre-loaded quizzes.' };
-    }
-}
-
 
 export async function getQuizAction(quizId: string) {
     try {
@@ -273,5 +256,3 @@ async function checkAndAwardAchievementsAction(userId: string): Promise<Achievem
     }
     return newlyUnlocked;
 }
-
-    
