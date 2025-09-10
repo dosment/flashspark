@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Header from '@/components/Header';
 import type { Flashcard, QuizType, PreloadedQuiz, AppUser } from '@/lib/types';
-import { X, LoaderCircle, Wand2, Save, BookOpen } from 'lucide-react';
+import { X, LoaderCircle, Wand2, Save, BookOpen, FileText } from 'lucide-react';
 import { generateFlashcards } from '@/ai/flows/generate-flashcards-from-topic';
+import { generateFlashcardsFromText } from '@/ai/flows/generate-flashcards-from-text';
 import { useAuth } from '@/hooks/use-auth';
 import { saveQuizAction, getPreloadedQuizzesAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -31,9 +32,10 @@ function CreateQuizPageContent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [aiTopic, setAiTopic] = useState('');
+  const [aiText, setAiText] = useState('');
   const [quizTitle, setQuizTitle] = useState('');
   const [quizType, setQuizType] = useState<QuizType>('standard');
-  const [activeView, setActiveView] = useState<'manual' | 'ai' | 'preloaded'>('manual');
+  const [activeView, setActiveView] = useState<'manual' | 'aiTopic' | 'aiText' | 'preloaded'>('manual');
   
   const [preloadedQuizzes, setPreloadedQuizzes] = useState<PreloadedQuiz[]>([]);
   const [isFetchingPreloaded, setIsFetchingPreloaded] = useState(false);
@@ -58,7 +60,7 @@ function CreateQuizPageContent() {
 
   useEffect(() => {
     if (isAiMode) {
-      setActiveView('ai');
+      setActiveView('aiTopic');
       setQuizType('vocabulary');
     }
   }, [isAiMode]);
@@ -85,7 +87,7 @@ function CreateQuizPageContent() {
     }
   };
   
-  const handleAiGenerate = async (e: React.FormEvent) => {
+  const handleAiGenerateFromTopic = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!aiTopic) return;
     setIsGenerating(true);
@@ -113,12 +115,35 @@ function CreateQuizPageContent() {
           ...(age && { age }),
       });
       setFlashcards(result.flashcards);
+      toast({ title: "AI Complete!", description: `Generated ${result.flashcards.length} flashcards about ${aiTopic}.` });
     } catch (error) {
       console.error("Failed to generate flashcards", error);
       toast({ variant: "destructive", title: "AI Generation Failed", description: "Could not generate flashcards. Please try again." });
     }
     setIsGenerating(false);
   };
+  
+  const handleAiGenerateFromText = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiText) return;
+    setIsGenerating(true);
+    setQuizTitle('Quiz from My Notes');
+    setQuizType('standard');
+
+    try {
+      const result = await generateFlashcardsFromText({ 
+          text: aiText,
+          numFlashcards: 10,
+      });
+      setFlashcards(result.flashcards);
+      toast({ title: "AI Complete!", description: `Generated ${result.flashcards.length} flashcards from your text.` });
+    } catch (error) {
+      console.error("Failed to generate flashcards from text", error);
+      toast({ variant: "destructive", title: "AI Generation Failed", description: "Could not generate flashcards. Please try again." });
+    }
+    setIsGenerating(false);
+  };
+
 
   const handleSaveQuiz = async () => {
     if (flashcards.length === 0 || !quizTitle) {
@@ -172,23 +197,24 @@ function CreateQuizPageContent() {
       <Header />
       <main className="container mx-auto px-4 py-8 md:py-12">
         <section className="max-w-4xl mx-auto">
-            <div className="flex justify-center mb-8 gap-2">
+            <div className="flex justify-center mb-8 gap-2 flex-wrap">
                 <Button variant={activeView === 'manual' ? 'default' : 'outline'} onClick={() => setActiveView('manual')}>Create Manually</Button>
-                <Button variant={activeView === 'ai' ? 'default' : 'outline'} onClick={() => {setActiveView('ai'); setQuizType('vocabulary')}}>Generate with AI</Button>
+                <Button variant={activeView === 'aiTopic' ? 'default' : 'outline'} onClick={() => {setActiveView('aiTopic'); setQuizType('vocabulary')}}>Generate from Topic</Button>
+                <Button variant={activeView === 'aiText' ? 'default' : 'outline'} onClick={() => {setActiveView('aiText'); setQuizType('standard')}}>Generate from Text</Button>
                 <Button variant={activeView === 'preloaded' ? 'default' : 'outline'} onClick={() => {setActiveView('preloaded'); setQuizType('vocabulary')}}>Use Preloaded</Button>
             </div>
 
-         {activeView === 'ai' && (
+         {activeView === 'aiTopic' && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-2xl font-headline flex items-center gap-2">
                   <Wand2 />
-                  Generate Vocabulary Quiz with AI
+                  Generate Quiz from Topic
                 </CardTitle>
                  <CardDescription>Enter a topic and let our AI create a vocabulary quiz for you.</CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleAiGenerate} className="flex gap-2">
+                <form onSubmit={handleAiGenerateFromTopic} className="flex gap-2">
                     <Input
                         value={aiTopic}
                         onChange={(e) => setAiTopic(e.target.value)}
@@ -203,6 +229,33 @@ function CreateQuizPageContent() {
               </CardContent>
             </Card>
           )} 
+
+          {activeView === 'aiText' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl font-headline flex items-center gap-2">
+                  <FileText />
+                  Generate Quiz from Text
+                </CardTitle>
+                 <CardDescription>Paste in your study material, notes, or any text, and let AI create flashcards for you.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleAiGenerateFromText} className="space-y-4">
+                    <Textarea
+                        value={aiText}
+                        onChange={(e) => setAiText(e.target.value)}
+                        placeholder="Paste your text here... for example: 'The mitochondria is the powerhouse of the cell. It generates most of the cell's supply of adenosine triphosphate (ATP).'"
+                        required
+                        disabled={isGenerating}
+                        rows={10}
+                    />
+                    <Button type="submit" disabled={isGenerating || isSaving || !aiText} className="w-full">
+                        {isGenerating ? <LoaderCircle className="animate-spin" /> : "Generate Flashcards"}
+                    </Button>
+                </form>
+              </CardContent>
+            </Card>
+          )}
           
           {activeView === 'manual' && (
             <Card>
