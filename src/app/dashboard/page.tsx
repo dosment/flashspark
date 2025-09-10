@@ -333,23 +333,12 @@ export default function DashboardPage() {
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  if (loading || !user) {
     return (
        <div className="flex flex-col items-center justify-center min-h-screen text-center">
         <LoaderCircle className="w-12 h-12 animate-spin text-primary mb-4" />
         <h1 className="text-2xl font-bold font-headline text-primary-foreground">
           Loading Dashboard...
-        </h1>
-      </div>
-    );
-  }
-
-  if (!user) {
-    // This case should be rare due to the useEffect redirect, but it's a good failsafe.
-    return (
-       <div className="flex flex-col items-center justify-center min-h-screen text-center">
-        <h1 className="text-2xl font-bold font-headline text-destructive">
-          Redirecting to login...
         </h1>
       </div>
     );
@@ -365,3 +354,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
