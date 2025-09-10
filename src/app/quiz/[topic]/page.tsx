@@ -103,3 +103,5 @@ function QuizPageContent() {
 export default function QuizPage() {
   return <QuizPageContent />;
 }
+
+    

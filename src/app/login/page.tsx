@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import { useEffect } from 'react';
+import { LoaderCircle } from 'lucide-react';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -60,6 +61,17 @@ export default function LoginPage() {
       router.push('/dashboard');
     }
   }, [user, loading, router]);
+  
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-center">
+       <LoaderCircle className="w-12 h-12 animate-spin text-primary mb-4" />
+       <h1 className="text-2xl font-bold font-headline text-primary-foreground">
+         Loading...
+       </h1>
+     </div>
+   );
+  }
 
 
   return (
@@ -84,3 +96,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    

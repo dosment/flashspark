@@ -49,7 +49,7 @@ function CreateQuizPageContent() {
   useEffect(() => {
     // This is a client-side convenience redirect.
     // The critical security check is on the server action.
-    if (!loading && user && user.role !== 'admin') {
+    if (!loading && user?.role !== 'admin') {
       console.warn('[CreateQuiz] Non-admin user detected, redirecting to dashboard.');
       router.push('/dashboard');
     }
@@ -372,3 +372,5 @@ export default function CreateQuizPage() {
     </Suspense>
   )
 }
+
+    
