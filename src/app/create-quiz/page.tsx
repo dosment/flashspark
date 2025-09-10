@@ -40,22 +40,22 @@ function CreateQuizPageContent() {
   
   useEffect(() => {
     if (isAiMode) {
-      console.log('[CreateQuiz] AI mode detected from URL');
+      console.log('[CreateQuizPage] AI mode detected from URL, switching view.');
       setActiveView('aiTopic');
       setQuizType('vocabulary');
     }
   }, [isAiMode]);
 
   useEffect(() => {
-    // Redirect if not a parent/admin after loading completes
     if (!loading && user?.role !== 'parent') {
+      console.log(`[CreateQuizPage] Access denied for user role: ${user?.role}. Redirecting.`);
       router.push('/dashboard');
     }
   }, [user, loading, router]);
   
   const handleAddFlashcard = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[CreateQuiz] Adding flashcard manually.');
+    console.log('[CreateQuizPage] Attempting to add flashcard manually.');
     if (question && answer && options.every(opt => opt.trim() !== '')) {
       const newFlashcard: Flashcard = {
         question,
@@ -63,12 +63,12 @@ function CreateQuizPageContent() {
         options: [...options, answer], 
       };
       setFlashcards([...flashcards, newFlashcard]);
-      console.log('[CreateQuiz] Flashcard added, resetting form.');
+      console.log('[CreateQuizPage] Flashcard added, resetting form.');
       setQuestion('');
       setAnswer('');
       setOptions(['', '', '']);
     } else {
-        console.warn('[CreateQuiz] Add flashcard validation failed.');
+        console.warn('[CreateQuizPage] Add flashcard validation failed. All fields must be filled.');
     }
   };
   
@@ -76,7 +76,7 @@ function CreateQuizPageContent() {
     e.preventDefault();
     if (!aiTopic) return;
     setIsGenerating(true);
-    console.log(`[CreateQuiz] Generating flashcards from topic: "${aiTopic}"`);
+    console.log(`[CreateQuizPage] Generating flashcards from topic: "${aiTopic}"`);
     setQuizTitle(aiTopic);
     setQuizType('vocabulary');
 
@@ -92,7 +92,7 @@ function CreateQuizPageContent() {
             age--;
         }
     }
-    console.log('[CreateQuiz] AI generation params:', { topic: aiTopic, gradeLevel, age });
+    console.log('[CreateQuizPage] AI generation params:', { topic: aiTopic, gradeLevel, age });
 
     try {
       const result = await generateFlashcards({ 
@@ -103,10 +103,10 @@ function CreateQuizPageContent() {
       });
       setFlashcards(result.flashcards);
       setActiveView('manual'); // Hide generation UI
-      console.log(`[CreateQuiz] AI generation successful, ${result.flashcards.length} flashcards created.`);
+      console.log(`[CreateQuizPage] AI generation successful, ${result.flashcards.length} flashcards created.`);
       toast({ title: "AI Complete!", description: `Generated ${result.flashcards.length} flashcards about ${aiTopic}.` });
     } catch (error) {
-      console.error("[CreateQuiz] Failed to generate flashcards from topic", error);
+      console.error("[CreateQuizPage] Failed to generate flashcards from topic.", error);
       toast({ variant: "destructive", title: "AI Generation Failed", description: "Could not generate flashcards. Please try again." });
     }
     setIsGenerating(false);
@@ -116,7 +116,7 @@ function CreateQuizPageContent() {
     e.preventDefault();
     if (!aiText) return;
     setIsGenerating(true);
-    console.log(`[CreateQuiz] Generating flashcards from text.`);
+    console.log(`[CreateQuizPage] Generating flashcards from text.`);
     setQuizTitle('Quiz from My Notes');
     setQuizType('standard');
 
@@ -127,10 +127,10 @@ function CreateQuizPageContent() {
       });
       setFlashcards(result.flashcards);
       setActiveView('manual'); // Hide generation UI
-       console.log(`[CreateQuiz] AI generation from text successful, ${result.flashcards.length} flashcards created.`);
+       console.log(`[CreateQuizPage] AI generation from text successful, ${result.flashcards.length} flashcards created.`);
       toast({ title: "AI Complete!", description: `Generated ${result.flashcards.length} flashcards from your text.` });
     } catch (error) {
-      console.error("[CreateQuiz] Failed to generate flashcards from text", error);
+      console.error("[CreateQuizPage] Failed to generate flashcards from text.", error);
       toast({ variant: "destructive", title: "AI Generation Failed", description: "Could not generate flashcards. Please try again." });
     }
     setIsGenerating(false);
@@ -139,19 +139,19 @@ function CreateQuizPageContent() {
 
   const handleSaveQuiz = async () => {
     if (flashcards.length === 0 || !quizTitle) {
-        console.warn('[CreateQuiz] Save validation failed: No flashcards or title.');
+        console.warn('[CreateQuizPage] Save validation failed: No flashcards or title.');
         toast({ variant: "destructive", title: "Cannot Save Quiz", description: "Please add at least one flashcard and a title." });
         return;
     }
     setIsSaving(true);
-    console.log(`[CreateQuiz] Saving quiz with title: "${quizTitle}"`);
+    console.log(`[CreateQuizPage] Saving quiz with title: "${quizTitle}"`);
     const result = await saveQuizAction({ title: quizTitle, flashcards, quizType });
     if (result.success) {
-        console.log(`[CreateQuiz] Quiz saved successfully with id: ${result.quizId}`);
+        console.log(`[CreateQuizPage] Quiz saved successfully with id: ${result.quizId}`);
         toast({ title: "Quiz Saved!", description: "Your new quiz has been saved to your dashboard." });
         router.push('/dashboard');
     } else {
-        console.error(`[CreateQuiz] Save failed:`, result.error);
+        console.error(`[CreateQuizPage] Save failed:`, result.error);
         toast({ variant: "destructive", title: "Save Failed", description: result.error });
     }
     setIsSaving(false);
@@ -164,7 +164,7 @@ function CreateQuizPageContent() {
   };
 
   const removeFlashcard = (index: number) => {
-    console.log(`[CreateQuiz] Removing flashcard at index: ${index}`);
+    console.log(`[CreateQuizPage] Removing flashcard at index: ${index}`);
     setFlashcards(flashcards.filter((_, i) => i !== index));
   };
   

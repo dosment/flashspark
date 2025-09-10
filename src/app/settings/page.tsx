@@ -55,18 +55,22 @@ function ProfileTab() {
     console.log(`[ProfileTab] User ${user.uid} selected new avatar: ${avatarId}`);
     setIsSaving(true);
     try {
-        await updateUserProfileAction(user.uid, { avatarId });
-        toast({
-            title: "Avatar Updated!",
-            description: "Your new avatar has been saved.",
-        });
-         console.log(`[ProfileTab] Avatar updated successfully.`);
-    } catch (error) {
-         console.error(`[ProfileTab] Error updating avatar:`, error);
+        const result = await updateUserProfileAction(user.uid, { avatarId });
+        if (result.success) {
+            toast({
+                title: "Avatar Updated!",
+                description: "Your new avatar has been saved.",
+            });
+            console.log(`[ProfileTab] Avatar updated successfully for user ${user.uid}.`);
+        } else {
+            throw new Error(result.error);
+        }
+    } catch (error: any) {
+         console.error(`[ProfileTab] Error updating avatar for user ${user.uid}:`, error);
         toast({
             variant: "destructive",
             title: "Save Failed",
-            description: "Could not update your avatar. Please try again."
+            description: error.message || "Could not update your avatar. Please try again."
         });
     } finally {
         setIsSaving(false);
@@ -318,12 +322,13 @@ export default function SettingsPage() {
   const router = useRouter();
 
   const handleUsersChanged = useCallback(() => {
-    console.log("[SettingsPage] A user was added/changed, dashboard data should be refreshed if it were visible.");
+    console.log("[SettingsPage] A user was added/changed, this component will re-render if data sources are updated.");
   }, []);
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/login');
+        console.log('[SettingsPage] No user found, redirecting to login.');
+        router.push('/login');
     }
   }, [user, loading, router]);
 
