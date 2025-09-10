@@ -33,8 +33,8 @@ async function checkUserProfile(firebaseUser: FirebaseAuthUser): Promise<AppUser
     }
     
     // This case should ideally not happen with the new parent-first creation flow.
-    // However, it's a good failsafe. A user signing up without being created by an parent
-    // will default to a parent/parent role.
+    // However, it's a good failsafe. A user signing up without being created by a parent
+    // will default to a parent role.
     console.warn(`[AUTH] No existing profile for ${firebaseUser.uid}. Creating new user with 'parent' role.`);
     const newUser: AppUser = {
         uid: firebaseUser.uid,
@@ -81,8 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         setUser(userDoc.data() as AppUser);
                         console.log('[AUTH] AppUser state updated with profile data:', userDoc.data());
                     } else {
-                        // This case handles a user signing up for the very first time, who wasn't pre-provisioned by an parent.
-                        // They will default to an parent role.
+                        // This case handles a user signing up for the very first time, who wasn't pre-provisioned by a parent.
+                        // They will default to a parent role.
                         console.log('[AUTH] Profile does not exist, checking/creating it...');
                         const userProfile = await checkUserProfile(fbUser);
                         setUser(userProfile);

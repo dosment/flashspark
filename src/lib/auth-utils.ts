@@ -1,5 +1,5 @@
 
-import 'server-only';
+'use server';
 import { cookies } from 'next/headers';
 import { getFirebaseAdminApp, getFirestoreAdmin } from './firebase-admin';
 import { AppUser } from './types';
@@ -23,8 +23,10 @@ export async function getCurrentUser(): Promise<AppUser | null> {
         return {
             uid: decodedIdToken.uid,
             email: userData?.email,
-            role: userData?.role,
-            parentId: userData?.parentId
+            role: userData?.role, // This will now correctly be 'parent' or 'child'
+            parentId: userData?.parentId,
+            name: userData?.name,
+            avatarId: userData?.avatarId,
         } as AppUser;
     }
     return null;
