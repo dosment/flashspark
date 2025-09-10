@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -366,7 +367,7 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
           <ScrollArea className="max-h-60 w-full pr-6 text-left">
             <div className="space-y-4">
                 {answeredFlashcards.map((card, index) => (
-                    <div key={index} className="p-3 rounded-md bg-muted/50">
+                    <div key={index} className="p-3 rounded-md bg-muted">
                         <p className="font-semibold mb-2">{index + 1}. {card.question}</p>
                         <div className="flex items-center gap-2">
                            {card.isCorrect ? (
@@ -403,3 +404,5 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
     </div>
   );
 }
+
+    

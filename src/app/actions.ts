@@ -62,15 +62,9 @@ export async function getQuizzesAction() {
         return { error: 'You must be logged in to view quizzes.' };
     }
     
-    // A child should request quizzes made by their parent. A parent (admin) can see their own quizzes.
-    const userIdToFetch = currentUser.role === 'child' ? currentUser.parentId : currentUser.uid;
-
-    if (!userIdToFetch) {
-        if (currentUser.role === 'child') {
-            return { quizzes: [] }; // Child not linked to a parent yet
-        }
-        return { error: 'User ID is required.' };
-    }
+    // This action is primarily for the parent to see their own quizzes.
+    // Children's quizzes are loaded via getDashboardDataAction.
+    const userIdToFetch = currentUser.uid;
     
     try {
         const quizzes = await getQuizzesForUser(userIdToFetch);
@@ -102,14 +96,17 @@ export async function getDashboardDataAction() {
 
     try {
         if (user.role === 'admin') {
-            const children = await getChildrenForParent(user.uid);
+            const [children, quizzes] = await Promise.all([
+                getChildrenForParent(user.uid),
+                getQuizzesForUser(user.uid)
+            ]);
+
             const childrenWithAttempts = await Promise.all(
                 children.map(async (child) => {
                     const attempts = await getQuizAttemptsForUser(child.uid);
                     return { ...child, attempts };
                 })
             );
-            const quizzes = await getQuizzesForUser(user.uid);
             return { children: childrenWithAttempts, quizzes };
         } else { // Child user
             if (!user.parentId) {
@@ -253,3 +250,5 @@ async function checkAndAwardAchievementsAction(userId: string): Promise<Achievem
     }
     return newlyUnlocked;
 }
+
+    
