@@ -29,7 +29,13 @@ async function checkUserProfile(firebaseUser: FirebaseAuthUser): Promise<AppUser
 
     if (userDoc.exists()) {
         console.log(`[AUTH] User profile exists for UID: ${firebaseUser.uid}. Returning data.`);
-        return userDoc.data() as AppUser;
+        // Manually correct if the role is still 'admin' in the database
+        const userData = userDoc.data() as AppUser;
+        if (userData.role === 'admin') {
+            console.log(`[AUTH] Found legacy 'admin' role for UID: ${firebaseUser.uid}. Correcting to 'parent' in component state.`);
+            userData.role = 'parent';
+        }
+        return userData;
     }
     
     // This case should ideally not happen with the new parent-first creation flow.
@@ -78,8 +84,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const unsubProfile = onSnapshot(userDocRef, async (userDoc) => {
                     console.log(`[AUTH] Profile snapshot received for UID: ${fbUser.uid}. Document exists: ${userDoc.exists()}`);
                     if (userDoc.exists()) {
-                        setUser(userDoc.data() as AppUser);
-                        console.log('[AUTH] AppUser state updated with profile data:', userDoc.data());
+                        const userData = userDoc.data() as AppUser;
+                        // Correct legacy 'admin' role on the fly
+                        if (userData.role === 'admin') {
+                            userData.role = 'parent';
+                        }
+                        setUser(userData);
+                        console.log('[AUTH] AppUser state updated with profile data:', userData);
                     } else {
                         // This case handles a user signing up for the very first time, who wasn't pre-provisioned by a parent.
                         // They will default to a parent role.

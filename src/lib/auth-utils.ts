@@ -20,10 +20,16 @@ export async function getCurrentUser(): Promise<AppUser | null> {
 
     if (userDoc.exists) {
         const userData = userDoc.data();
+        let userRole = userData?.role;
+        // This is a critical data migration step. If a user still has the 'admin' role in the DB,
+        // this server-side utility will correctly interpret it as 'parent'.
+        if (userRole === 'admin') {
+            userRole = 'parent';
+        }
         return {
             uid: decodedIdToken.uid,
             email: userData?.email,
-            role: userData?.role, // This will now correctly be 'parent' or 'child'
+            role: userRole, 
             parentId: userData?.parentId,
             name: userData?.name,
             avatarId: userData?.avatarId,
