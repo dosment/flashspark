@@ -46,7 +46,7 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
   const quizId = params.topic as string;
   const { toast } = useToast();
 
-  const [studyMode, setStudyMode] = useState<StudyMode | null>(quizType === 'vocabulary' ? 'definition-first' : 'definition-first');
+  const [studyMode, setStudyMode] = useState<StudyMode | null>(quizType === 'vocabulary' ? null : 'definition-first');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -176,6 +176,13 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
 
   const handleGetHint = useCallback(async () => {
     if (!currentFlashcard) return;
+    
+    // Prioritize built-in hint
+    if (currentFlashcard.hint) {
+      setHint(currentFlashcard.hint);
+      return;
+    }
+
     setIsHintLoading(true);
     setHintError(null);
     
@@ -320,12 +327,6 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
         <CardFooter className="flex-col items-start gap-4">
           <div className="flex w-full justify-between items-center">
             <div>
-              {!hint && !isHintLoading && currentFlashcard.hint && studyMode === 'definition-first' && (
-                <Button variant="ghost" size="sm" onClick={() => setHint(currentFlashcard.hint!)}>
-                  <Lightbulb className="mr-2 h-4 w-4" />
-                  Show built-in hint
-                </Button>
-              )}
                {!hint && !isHintLoading && (
                 <Button variant="ghost" size="sm" onClick={handleGetHint}>
                   <Lightbulb className="mr-2 h-4 w-4" />
@@ -404,5 +405,3 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
     </div>
   );
 }
-
-    
