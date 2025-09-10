@@ -12,11 +12,12 @@ const db = getFirestoreAdmin();
 const auth = adminAuth(getFirebaseAdminApp());
 
 
-export async function createUser(userData: {email: string, role: 'admin' | 'child', parentId?: string}): Promise<AppUser> {
+export async function createUser(userData: {email: string, name?: string, role: 'admin' | 'child', parentId?: string, gradeLevel?: string, dateOfBirth?: string}): Promise<AppUser> {
     console.log('[DB] createUser: Creating Firebase Auth user for email:', userData.email);
     const authUser = await auth.createUser({
         email: userData.email,
         emailVerified: true, // Since we trust the admin creating the account
+        displayName: userData.name,
     });
     console.log('[DB] createUser: Firebase Auth user created successfully, UID:', authUser.uid);
 
@@ -25,7 +26,10 @@ export async function createUser(userData: {email: string, role: 'admin' | 'chil
         email: userData.email.toLowerCase(),
         role: userData.role,
         avatarId: 'avatar-1', // Default avatar
+        ...(userData.name && { name: userData.name }),
         ...(userData.parentId && { parentId: userData.parentId }),
+        ...(userData.gradeLevel && { gradeLevel: userData.gradeLevel }),
+        ...(userData.dateOfBirth && { dateOfBirth: userData.dateOfBirth }),
     };
 
     console.log('[DB] createUser: Creating Firestore user profile with data:', newUser);
@@ -124,12 +128,21 @@ export async function getChildrenForParent(parentId: string): Promise<AppUser[]>
     const users: AppUser[] = [];
     const q = db.collection('users').where('parentId', '==', parentId);
     const querySnapshot = await q.get();
-    querySnapshot.forEach((doc) => {
+    
+    for (const doc of querySnapshot.docs) {
+        const userData = doc.data() as AppUser;
+        try {
+            const authUser = await auth.getUser(doc.id);
+            userData.lastLogin = authUser.metadata.lastSignInTime;
+        } catch (error) {
+            console.warn(`[DB] Could not fetch auth data for user ${doc.id}`, error);
+            userData.lastLogin = 'N/A';
+        }
         users.push({
             uid: doc.id,
-            ...doc.data()
-        } as AppUser);
-    });
+            ...userData
+        });
+    };
     return users;
 }
 
@@ -193,5 +206,3 @@ export async function unlockAchievement(userId: string, achievementId: string): 
         unlockedAt: serverTimestamp() as FieldValue,
     });
 }
-
-    

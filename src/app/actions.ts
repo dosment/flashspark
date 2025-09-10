@@ -185,23 +185,26 @@ export async function saveQuizAttemptAction(attemptData: Omit<QuizAttempt, 'id' 
     }
 }
 
-export async function addChildAction(childEmail: string) {
-    console.log('[ACTION] addChildAction: Triggered for email:', childEmail);
+export async function addChildAction(childData: { email: string; name: string; gradeLevel: string; dateOfBirth: string; }) {
+    console.log('[ACTION] addChildAction: Triggered for email:', childData.email);
     const parent = await getCurrentUser();
     if (!parent || parent.role !== 'admin') {
         console.error('[ACTION] addChildAction: Error - Not an admin or not logged in.');
         return { error: 'Only parents can add children.' };
     }
 
-    if (childEmail.toLowerCase() === parent.email?.toLowerCase()) {
+    if (childData.email.toLowerCase() === parent.email?.toLowerCase()) {
         console.error('[ACTION] addChildAction: Error - Parent cannot add self.');
         return { error: 'You cannot add yourself as a child.' };
     }
 
     try {
-        console.log(`[ACTION] addChildAction: Creating user with email: ${childEmail}`);
+        console.log(`[ACTION] addChildAction: Creating user with email: ${childData.email}`);
         const newUser = await createUser({
-            email: childEmail,
+            email: childData.email,
+            name: childData.name,
+            gradeLevel: childData.gradeLevel,
+            dateOfBirth: childData.dateOfBirth,
             role: 'child',
             parentId: parent.uid
         });
@@ -295,5 +298,3 @@ async function checkAndAwardAchievementsAction(userId: string): Promise<Achievem
     console.log(`[ACHIEVEMENT] Finished check for ${userId}. Awarded ${newlyUnlocked.length} new achievements.`);
     return newlyUnlocked;
 }
-
-    

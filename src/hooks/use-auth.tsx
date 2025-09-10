@@ -39,6 +39,7 @@ async function checkUserProfile(firebaseUser: FirebaseAuthUser): Promise<AppUser
     const newUser: AppUser = {
         uid: firebaseUser.uid,
         email: firebaseUser.email!.toLowerCase(),
+        name: firebaseUser.displayName,
         role: 'admin', 
         avatarId: 'avatar-1'
     };
@@ -172,5 +173,3 @@ export function useAuth() {
   }
   return context;
 }
-
-    

@@ -8,7 +8,7 @@ import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, CheckCircle, Award, User, Users } from 'lucide-react';
+import { LoaderCircle, CheckCircle, Award, User, Users, Calendar, Mail, GraduationCap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ALL_AVATARS, getAvatar } from '@/lib/avatars';
 import { updateUserProfile } from '@/lib/firestore';
@@ -18,7 +18,7 @@ import { getDashboardDataAction, getManagedUsersAction } from '../actions';
 import { UserAchievement, AppUser } from '@/lib/types';
 import { ALL_ACHIEVEMENTS } from '@/lib/achievements';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AddChildDialog } from '@/components/AddChildDialog';
 import { AddParentDialog } from '@/components/AddParentDialog';
@@ -88,11 +88,11 @@ function ProfileTab() {
                     ) : (
                         <Avatar className="w-32 h-32 mb-4">
                             <AvatarFallback className="text-5xl">
-                                {user.email?.charAt(0).toUpperCase()}
+                                {user.name ? user.name.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
                     )}
-                    <CardTitle className="text-3xl">{user.email}</CardTitle>
+                    <CardTitle className="text-3xl">{user.name || user.email}</CardTitle>
                     <div className="flex items-center gap-2">
                        <Badge className='capitalize' variant={user.role === 'admin' ? 'default' : 'secondary'}>{user.role}</Badge>
                        {user.gradeLevel && <Badge variant="outline">{user.gradeLevel}</Badge>}
@@ -240,15 +240,30 @@ function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
                 {children.map((child, index) => {
                     const ChildAvatar = getAvatar(child.avatarId);
                     return (
-                        <div key={child.uid} className={cn("flex items-center gap-4 p-4", index !== children.length -1 && 'border-b')}>
-                            <Avatar>
-                                {ChildAvatar ? <ChildAvatar /> : <AvatarFallback>{child.email?.[0].toUpperCase()}</AvatarFallback>}
+                        <div key={child.uid} className={cn("flex items-start gap-4 p-4", index !== children.length -1 && 'border-b')}>
+                            <Avatar className="mt-1">
+                                {ChildAvatar ? <ChildAvatar /> : <AvatarFallback>{child.name ? child.name[0] : child.email?.[0].toUpperCase()}</AvatarFallback>}
                             </Avatar>
-                            <div className='flex-1'>
-                                <p className='font-medium'>{child.email}</p>
-                                <p className='text-sm text-muted-foreground'>
-                                    Role: <Badge variant='secondary' className='capitalize'>{child.role}</Badge>
-                                </p>
+                            <div className='flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2'>
+                                <div className="font-semibold text-lg md:col-span-2">{child.name || 'No Name'}</div>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Mail className="w-4 h-4"/>
+                                    <span>{child.email}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <GraduationCap className="w-4 h-4"/>
+                                    <span>{child.gradeLevel || 'N/A'}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Calendar className="w-4 h-4"/>
+                                     <span>Born: {child.dateOfBirth ? format(new Date(child.dateOfBirth), 'PPP') : 'N/A'}</span>
+                                </div>
+                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <User className="w-4 h-4"/>
+                                    <p>
+                                        Last Login: {child.lastLogin && child.lastLogin !== 'N/A' ? formatDistanceToNow(new Date(child.lastLogin), { addSuffix: true }) : 'Never'}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     )
