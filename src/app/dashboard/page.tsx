@@ -72,14 +72,6 @@ function AdminDashboard({ user }: { user: AppUser }) {
                             <CardTitle>Create your first quiz!</CardTitle>
                             <CardDescription>Click the "Create Quiz" button in the header to get started.</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                             <Button asChild>
-                                <Link href="/create-quiz">
-                                    <PlusCircle />
-                                    Create Quiz
-                                </Link>
-                            </Button>
-                        </CardContent>
                     </Card>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -163,8 +155,7 @@ function AdminDashboard({ user }: { user: AppUser }) {
 
 
 function ChildDashboard({ user }: { user: AppUser }) {
-    const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-    const [achievements, setAchievements] = useState<UserAchievement[]>([]);
+    const [data, setData] = useState<{ quizzes: Quiz[], achievements: UserAchievement[] }>({ quizzes: [], achievements: [] });
     const [isFetching, setIsFetching] = useState(true);
     const { toast } = useToast();
 
@@ -175,9 +166,12 @@ function ChildDashboard({ user }: { user: AppUser }) {
     
             if (result.error) {
                 toast({ variant: 'destructive', title: 'Error', description: result.error });
+                 setData({ quizzes: [], achievements: [] });
             } else {
-                if (result.quizzes) setQuizzes(result.quizzes);
-                if (result.achievements) setAchievements(result.achievements);
+                setData({
+                    quizzes: result.quizzes || [],
+                    achievements: result.achievements || []
+                });
             }
             
             if (user.role === 'child' && !user.parentId && (!result.quizzes || result.quizzes.length === 0)) {
@@ -189,7 +183,7 @@ function ChildDashboard({ user }: { user: AppUser }) {
         fetchDashboardData();
     }, [user, toast]);
 
-    const unlockedAchievementMap = new Map(achievements.map(a => [a.achievementId, a]));
+    const unlockedAchievementMap = new Map(data.achievements.map(a => [a.achievementId, a]));
 
     return (
          <div className='space-y-12'>
@@ -240,7 +234,7 @@ function ChildDashboard({ user }: { user: AppUser }) {
                         <LoaderCircle className="w-8 h-8 animate-spin text-primary mx-auto" />
                         <p className="mt-2 text-muted-foreground">Fetching your quizzes...</p>
                     </div>
-                ) : quizzes.length === 0 ? (
+                ) : data.quizzes.length === 0 ? (
                     <Card className="text-center py-12">
                         <CardHeader className="items-center">
                             <BookOpen className="w-16 h-16 text-muted-foreground mb-4" />
@@ -250,7 +244,7 @@ function ChildDashboard({ user }: { user: AppUser }) {
                     </Card>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {quizzes.map((quiz) => (
+                        {data.quizzes.map((quiz) => (
                             <Card key={quiz.id} className="flex flex-col hover:shadow-lg transition-shadow">
                                 <CardHeader className="flex-row items-center gap-4 space-y-0">
                                     {getQuizIcon(quiz.quizType, quiz.title)}
@@ -306,5 +300,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
