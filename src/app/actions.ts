@@ -1,4 +1,3 @@
-
 'use server';
 
 import { provideHints } from '@/ai/flows/provide-hints-using-external-knowledge.ts';
@@ -266,5 +265,3 @@ async function checkAndAwardAchievementsAction(userId: string) {
         // We don't return an error to the user as this is a background process
     }
 }
-
-    

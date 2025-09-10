@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, Suspense, useEffect, useCallback } from 'react';
@@ -362,5 +361,3 @@ export default function CreateQuizPage() {
     </Suspense>
   )
 }
-
-    

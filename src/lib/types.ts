@@ -1,4 +1,3 @@
-
 import type { User as FirebaseAuthUser } from 'firebase/auth';
 import type { LucideIcon } from 'lucide-react';
 
@@ -76,5 +75,3 @@ export type UserAchievement = {
     achievementId: string;
     unlockedAt: any;
 };
-
-    

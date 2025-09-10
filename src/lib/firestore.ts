@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getFirebaseAdminApp, getFirestoreAdmin } from './firebase-admin';
@@ -208,5 +207,3 @@ export async function unlockAchievement(userId: string, achievementId: string): 
         unlockedAt: serverTimestamp() as FieldValue,
     });
 }
-
-    
