@@ -2,6 +2,15 @@ import type { User as FirebaseAuthUser } from 'firebase/auth';
 import type { LucideIcon } from 'lucide-react';
 import type { Timestamp } from 'firebase/firestore';
 
+// Defines the valid roles in the application
+export const Roles = {
+  ADMIN: 'admin',
+  PARENT: 'parent',
+  CHILD: 'child',
+} as const;
+
+export type Role = typeof Roles[keyof typeof Roles];
+
 export type Flashcard = {
   question: string;
   answer: string;
@@ -31,13 +40,15 @@ export type Quiz = {
 export type AppUser = {
     uid: string;
     email: string | null;
-    role: 'parent' | 'child';
+    role: Role;
     name?: string;
-    parentId?: string; // ID of the parent (admin) user for children
+    parentIds?: string[]; // ID of the parent (admin) user for children
     gradeLevel?: string;
     dateOfBirth?: string;
     avatarId?: string;
     lastLogin?: string;
+    // Deprecated, use parentIds
+    parentId?: string; 
 }
 
 export type AnsweredFlashcard = {

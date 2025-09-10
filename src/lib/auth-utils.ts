@@ -1,46 +1,15 @@
+import { User } from 'firebase/auth';
+import { AppUser, Role } from '@/lib/types';
 
-'use server';
-import { cookies } from 'next/headers';
-import { getFirebaseAdminApp, getFirestoreAdmin } from './firebase-admin';
-import { AppUser } from './types';
-import { auth } from 'firebase-admin';
-
-export async function getCurrentUser(): Promise<AppUser | null> {
-  const sessionCookie = cookies().get('__session')?.value;
-  if (!sessionCookie) {
+/**
+ * A utility function that returns the user's role.
+ * @param fbUser The Firebase User object, which may be null.
+ * @param appUser The application-specific user profile, which may be null.
+ * @returns The user's role, or null if the user is not authenticated.
+ */
+export function getRole(fbUser: User | null, appUser: AppUser | null): Role | null {
+  if (!fbUser || !appUser) {
     return null;
   }
-
-  try {
-    const adminApp = getFirebaseAdminApp();
-    const decodedIdToken = await auth(adminApp).verifySessionCookie(sessionCookie, true);
-    
-    const dbAdmin = getFirestoreAdmin();
-    const userDoc = await dbAdmin.collection('users').doc(decodedIdToken.uid).get();
-
-    if (userDoc.exists) {
-        const userData = userDoc.data();
-        let userRole = userData?.role;
-        // This is a critical data migration step. If a user still has the 'admin' role in the DB,
-        // this server-side utility will correctly interpret it as 'parent'.
-        if (userRole === 'admin') {
-            userRole = 'parent';
-        }
-        return {
-            uid: decodedIdToken.uid,
-            email: userData?.email,
-            role: userRole, 
-            parentId: userData?.parentId,
-            name: userData?.name,
-            avatarId: userData?.avatarId,
-        } as AppUser;
-    }
-    return null;
-
-  } catch (error) {
-    console.error("Failed to verify session cookie or get user:", error);
-    // It's good practice to clear a cookie that causes errors.
-    cookies().delete('__session');
-    return null;
-  }
+  return appUser.role;
 }

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { LoaderCircle, Play, Eye, BookOpen, User } from 'lucide-react';
 import { getDashboardDataAction } from '@/app/actions';
 import type { Quiz, AppUser, QuizAttempt, QuizType, UserAchievement } from '@/lib/types';
+import { Roles } from '@/lib/types';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -28,7 +29,7 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel';
 
-type ChildWithAttempts = AppUser & { attempts: QuizAttempt[] };
+type UserWithAttempts = AppUser & { attempts: QuizAttempt[] };
 
 const getQuizIcon = (quizType: QuizType, title: string) => {
     const lowerCaseTitle = title.toLowerCase();
@@ -42,24 +43,24 @@ const getQuizIcon = (quizType: QuizType, title: string) => {
 
 
 function ParentDashboard({ user }: { user: AppUser }) {
-    const [data, setData] = useState<{ children: ChildWithAttempts[], quizzes: Quiz[] }>({ children: [], quizzes: [] });
+    const [data, setData] = useState<{ usersWithAttempts: UserWithAttempts[], quizzes: Quiz[] }>({ usersWithAttempts: [], quizzes: [] });
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
 
     const fetchDashboardData = useCallback(async () => {
-        if (!user) return; // Don't fetch if user is not available yet
+        if (!user) return;
         console.log('[ParentDashboard] Fetching dashboard data...');
         setIsLoading(true);
         const result = await getDashboardDataAction();
         if (result.error) {
             console.error('[ParentDashboard] Error fetching data:', result.error);
             toast({ variant: 'destructive', title: 'Error', description: result.error });
-            setData({ children: [], quizzes: [] });
+            setData({ usersWithAttempts: [], quizzes: [] });
         } else {
             console.log('[ParentDashboard] Data fetched successfully:', result);
-            setData({ 
-                children: (result.children as ChildWithAttempts[]) || [], 
-                quizzes: result.quizzes || [] 
+            setData({
+                usersWithAttempts: (result.usersWithAttempts as UserWithAttempts[]) || [],
+                quizzes: result.quizzes || []
             });
         }
         setIsLoading(false);
@@ -68,7 +69,9 @@ function ParentDashboard({ user }: { user: AppUser }) {
     useEffect(() => {
         fetchDashboardData();
     }, [fetchDashboardData]);
-    
+
+    const activityTitle = user.role === Roles.ADMIN ? 'User Activity' : 'Child Activity';
+
     return (
         <div className="space-y-12">
             <div>
@@ -108,16 +111,16 @@ function ParentDashboard({ user }: { user: AppUser }) {
 
             <div>
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-3xl font-bold font-headline">Child Activity</h2>
+                    <h2 className="text-3xl font-bold font-headline">{activityTitle}</h2>
                 </div>
                  {isLoading ? (
                     <div className="text-center">
                         <LoaderCircle className="w-8 h-8 animate-spin text-primary mx-auto" />
                     </div>
-                ) : data.children.length === 0 ? (
+                ) : data.usersWithAttempts.length === 0 ? (
                     <Card className="text-center py-12">
                         <CardHeader>
-                            <CardTitle>No children found</CardTitle>
+                            <CardTitle>No users found</CardTitle>
                             <CardDescription>Add a child account via the Settings page to see their progress.</CardDescription>
                         </CardHeader>
                         <CardFooter>
@@ -134,28 +137,28 @@ function ParentDashboard({ user }: { user: AppUser }) {
                         className="w-full"
                         >
                         <CarouselContent>
-                            {data.children.map(child => {
-                                const chartData = child.attempts.slice(0, 5).reverse().map(attempt => ({
+                            {data.usersWithAttempts.map(u => {
+                                const chartData = u.attempts.slice(0, 5).reverse().map(attempt => ({
                                     name: format(new Date(attempt.completedAt.seconds * 1000), 'MMM d'),
                                     score: (attempt.score / attempt.totalQuestions) * 100,
                                     quizTitle: attempt.quizTitle
                                 }));
 
                                 return (
-                                <CarouselItem key={child.uid} className="md:basis-1/2 lg:basis-1/3">
+                                <CarouselItem key={u.uid} className="md:basis-1/2 lg:basis-1/3">
                                     <div className="p-1">
                                     <Card>
                                         <CardHeader>
                                                 <CardTitle className="flex items-center gap-2 font-headline">
                                                     <User className="text-primary"/>
-                                                    {child.name || child.email}
+                                                    {u.name || u.email}
                                                 </CardTitle>
                                                 <CardDescription>
-                                                    {child.attempts.length > 0 ? `Last active: ${formatDistanceToNow(new Date(child.attempts[0].completedAt.seconds * 1000), { addSuffix: true })}` : 'No activity yet.'}
+                                                    {u.attempts.length > 0 ? `Last active: ${formatDistanceToNow(new Date(u.attempts[0].completedAt.seconds * 1000), { addSuffix: true })}` : 'No activity yet.'}
                                                 </CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                                {child.attempts.length > 0 ? (
+                                                {u.attempts.length > 0 ? (
                                                     <ChartContainer config={{
                                                         score: {
                                                           label: 'Score',
@@ -211,7 +214,7 @@ function ChildDashboard({ user }: { user: AppUser }) {
             console.log('[ChildDashboard] Fetching dashboard data...');
             setIsFetching(true);
             const result = await getDashboardDataAction();
-    
+
             if (result.error) {
                 console.error('[ChildDashboard] Error fetching data:', result.error);
                 toast({ variant: 'destructive', title: 'Error', description: result.error });
@@ -223,11 +226,11 @@ function ChildDashboard({ user }: { user: AppUser }) {
                     achievements: result.achievements || [],
                     attempts: result.attempts || []
                 });
-            }
-            
-            if (user.role === 'child' && !user.parentId && (!result.quizzes || result.quizzes.length === 0)) {
-                console.log('[ChildDashboard] Standalone child detected, showing welcome toast.');
-                toast({ variant: 'default', title: 'Welcome!', description: 'Please ask your parent to add you to their account to see quizzes.' });
+
+                if (user.role === 'child' && (!user.parentIds || user.parentIds.length === 0) && (!result.quizzes || result.quizzes.length === 0)) {
+                    console.log('[ChildDashboard] Standalone child detected, showing welcome toast.');
+                    toast({ variant: 'default', title: 'Welcome!', description: 'Please ask your parent to add you to their account to see quizzes.' });
+                }
             }
 
             setIsFetching(false);
@@ -340,10 +343,8 @@ export default function DashboardPage() {
   }
 
   if (!user) {
-    // This should ideally not be reached if the layout/route handles auth properly,
-    // but it's a good failsafe.
     router.push('/login');
-    return null; // Render nothing while redirecting
+    return null;
   }
 
   console.log(`[DashboardPage] Rendering dashboard for user ${user.uid} with role ${user.role}`);
@@ -351,7 +352,7 @@ export default function DashboardPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8 md:py-12">
-        {user.role === 'parent' ? <ParentDashboard user={user} /> : <ChildDashboard user={user} />}
+        {(user.role === 'parent' || user.role === 'admin') ? <ParentDashboard user={user} /> : <ChildDashboard user={user} />}
       </main>
     </div>
   );
