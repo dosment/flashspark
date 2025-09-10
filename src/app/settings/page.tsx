@@ -224,26 +224,26 @@ function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
             <Avatar className="mt-1">
                 {UserAvatar ? <UserAvatar /> : <AvatarFallback>{user.name ? user.name[0] : user.email?.[0].toUpperCase()}</AvatarFallback>}
             </Avatar>
-            <div className='flex-1 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2'>
-                <div className="font-semibold text-lg md:col-span-2">{user.name || 'No Name'}</div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="w-4 h-4"/>
+            <div className='flex-1 flex flex-col md:flex-row md:flex-wrap gap-x-4 gap-y-1'>
+                <div className="font-semibold text-lg md:w-full md:col-span-2">{user.name || 'No Name'}</div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground break-all">
+                    <Mail className="w-4 h-4 flex-shrink-0"/>
                     <span>{user.email}</span>
                 </div>
                  {user.role === 'child' && (
                      <>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <GraduationCap className="w-4 h-4"/>
+                            <GraduationCap className="w-4 h-4 flex-shrink-0"/>
                             <span>{user.gradeLevel || 'N/A'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="w-4 h-4"/>
+                            <Calendar className="w-4 h-4 flex-shrink-0"/>
                             <span>Born: {user.dateOfBirth ? format(new Date(user.dateOfBirth), 'PPP') : 'N/A'}</span>
                         </div>
                      </>
                  )}
                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <User className="w-4 h-4"/>
+                    <User className="w-4 h-4 flex-shrink-0"/>
                     <p>
                         Last Login: {user.lastLogin && user.lastLogin !== 'N/A' ? formatDistanceToNow(new Date(user.lastLogin), { addSuffix: true }) : 'Never'}
                     </p>
@@ -363,5 +363,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    

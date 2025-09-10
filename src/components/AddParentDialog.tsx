@@ -57,7 +57,7 @@ export function AddParentDialog({ onParentAdded }: { onParentAdded: () => void }
           Add Parent
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <form onSubmit={handleAddParent}>
           <DialogHeader>
             <DialogTitle>Create Parent Account</DialogTitle>
@@ -98,5 +98,3 @@ export function AddParentDialog({ onParentAdded }: { onParentAdded: () => void }
     </Dialog>
   );
 }
-
-    
