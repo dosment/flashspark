@@ -47,6 +47,7 @@ function ParentDashboard({ user }: { user: AppUser }) {
     const { toast } = useToast();
 
     const fetchDashboardData = useCallback(async () => {
+        if (!user) return; // Don't fetch if user is not available yet
         console.log('[ParentDashboard] Fetching dashboard data...');
         setIsLoading(true);
         const result = await getDashboardDataAction();
@@ -62,7 +63,7 @@ function ParentDashboard({ user }: { user: AppUser }) {
             });
         }
         setIsLoading(false);
-    }, [toast]);
+    }, [toast, user]);
 
     useEffect(() => {
         fetchDashboardData();

@@ -15,6 +15,7 @@ import {
     updateUserProfile,
     createUser,
     unlockAchievement,
+    getUserAchievements,
 } from '@/lib/firestore';
 import { Quiz, QuizAttempt, AppUser, QuizType, UserAchievement, Achievement } from '@/lib/types';
 import { getCurrentUser } from '@/lib/auth-utils';
