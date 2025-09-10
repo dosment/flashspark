@@ -1,39 +1,47 @@
 
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Users can read/write their own user profile
+
+    // Users can read and write to their own user document
     match /users/{userId} {
-      allow read, update: if request.auth.uid == userId;
-      allow create: if request.auth.uid != null;
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
     }
 
-    // Quizzes can be read by anyone, but only created/modified by the owner (parent)
+    // Children can read quizzes assigned by their parent.
+    // Parents can create, read, update, delete their own quizzes.
     match /quizzes/{quizId} {
-      allow read: if request.auth.uid != null;
-      allow create, update, delete: if request.auth.uid == resource.data.userId;
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid || 
+        resource.data.userId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.parentId
+      );
+      allow create, update, delete: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
     
-    // Preloaded quizzes are read-only for any authenticated user
+    // Users can read preloaded quizzes
     match /preloadedQuizzes/{quizId} {
-      allow read: if request.auth.uid != null;
-      allow write: if false; // Nobody can write to preloaded quizzes from the client
+      allow read: if request.auth != null;
+      // Prevent write access for all users
+      allow write: if false;
     }
-    
-    // Quiz attempts can be created by the user taking the quiz, and read by that user or their parent
+
+    // Users can write their own quiz attempts.
+    // Parents can read their children's attempts.
     match /quizAttempts/{attemptId} {
-      allow create: if request.auth.uid == request.resource.data.userId;
-      // Allow read if you are the user who made the attempt OR you are the parent of that user
-      allow read: if request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/users/$(resource.data.userId)).data.parentId == request.auth.uid;
-      allow update, delete: if false; // Attempts are immutable
+       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+       allow read: if request.auth != null && (
+         resource.data.userId == request.auth.uid || 
+         get(/databases/$(database)/documents/users/$(resource.data.userId)).data.parentId == request.auth.uid
+       );
     }
     
-    // Achievements can be read by the user or their parent, but only created by the server
+    // Achievements can be read by the user who owns them.
+    // Achievements are written by server-side logic, not clients.
     match /userAchievements/{achievementId} {
-      allow create: if false; // Locked down - only server can create
-      allow read: if request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/users/$(resource.data.userId)).data.parentId == request.auth.uid;
-      allow update, delete: if false;
+        allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+        allow write: if false; // Only server-side logic can unlock achievements
     }
   }
 }
