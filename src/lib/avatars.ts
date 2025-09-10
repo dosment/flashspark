@@ -15,12 +15,12 @@ import Avatar11 from '@/components/icons/avatars/avatar-11';
 import Avatar12 from '@/components/icons/avatars/avatar-12';
 
 
-export type Avatar = {
+export type AvatarInfo = {
     id: string;
     component: FunctionComponent<SVGProps<SVGSVGElement>>;
 };
 
-export const ALL_AVATARS: Avatar[] = [
+export const ALL_AVATARS: AvatarInfo[] = [
     { id: 'avatar-1', component: Avatar1 },
     { id: 'avatar-2', component: Avatar2 },
     { id: 'avatar-3', component: Avatar3 },
