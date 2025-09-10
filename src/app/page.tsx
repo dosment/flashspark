@@ -55,7 +55,7 @@ export default function Home() {
         </section>
       </main>
       <footer className="text-center py-4 text-muted-foreground text-sm">
-        <p>&copy; {new date().getFullYear()} FlashSpark. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} FlashSpark. All rights reserved.</p>
       </footer>
     </div>
   );
