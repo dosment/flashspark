@@ -7,8 +7,8 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, PlusCircle, Trash2, Play, Eye, BookOpen, UserPlus, ShieldPlus } from 'lucide-react';
-import { getDashboardDataAction, getQuizzesAction } from '@/app/actions';
+import { LoaderCircle, PlusCircle, Play, Eye, BookOpen } from 'lucide-react';
+import { getDashboardDataAction } from '@/app/actions';
 import type { Quiz, AppUser, QuizAttempt, QuizType, UserAchievement } from '@/lib/types';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -43,10 +43,14 @@ function AdminDashboard({ user }: { user: AppUser }) {
     const fetchDashboardData = useCallback(async () => {
         setIsLoading(true);
         const result = await getDashboardDataAction();
-        if (result.children && result.quizzes) {
-            setData({ children: result.children, quizzes: result.quizzes });
-        } else if (result.error) {
+        if (result.error) {
             toast({ variant: 'destructive', title: 'Error', description: result.error });
+            setData({ children: [], quizzes: [] });
+        } else {
+            setData({ 
+                children: result.children || [], 
+                quizzes: result.quizzes || [] 
+            });
         }
         setIsLoading(false);
     }, [toast]);
@@ -105,7 +109,7 @@ function AdminDashboard({ user }: { user: AppUser }) {
                     <h2 className="text-3xl font-bold font-headline">Child Activity</h2>
                     <div className="flex gap-2">
                         <AddChildDialog onChildAdded={fetchDashboardData} />
-                        <AddParentDialog onParentAdded={() => {}} />
+                        <AddParentDialog onParentAdded={fetchDashboardData} />
                     </div>
                 </div>
                  {isLoading ? (
@@ -165,14 +169,14 @@ function ChildDashboard({ user }: { user: AppUser }) {
             setIsFetching(true);
             const result = await getDashboardDataAction();
     
-            if (result.quizzes) setQuizzes(result.quizzes);
-            if (result.achievements) setAchievements(result.achievements);
-    
             if (result.error) {
                 toast({ variant: 'destructive', title: 'Error', description: result.error });
+            } else {
+                if (result.quizzes) setQuizzes(result.quizzes);
+                if (result.achievements) setAchievements(result.achievements);
             }
             
-            if (result.quizzes?.length === 0 && user.role === 'child' && !user.parentId) {
+            if (user.role === 'child' && !user.parentId && (!result.quizzes || result.quizzes.length === 0)) {
                 toast({ variant: 'default', title: 'Welcome!', description: 'Please ask your parent to add you to their account to see quizzes.' });
             }
 
