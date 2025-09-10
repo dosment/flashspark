@@ -8,13 +8,12 @@ import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, CheckCircle, Award, User, Users, Calendar, Mail, GraduationCap, Shield } from 'lucide-react';
+import { LoaderCircle, CheckCircle, Award, User, Users, Calendar, Mail, GraduationCap, Shield, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ALL_AVATARS, getAvatar } from '@/lib/avatars';
-import { updateUserProfile } from '@/lib/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { getDashboardDataAction, getManagedUsersAction } from '../actions';
+import { getDashboardDataAction, getManagedUsersAction, updateUserProfileAction } from '../actions';
 import { UserAchievement, AppUser } from '@/lib/types';
 import { ALL_ACHIEVEMENTS } from '@/lib/achievements';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -22,6 +21,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AddChildDialog } from '@/components/AddChildDialog';
 import { AddParentDialog } from '@/components/AddParentDialog';
+import { EditUserDialog } from '@/components/EditUserDialog';
 
 function ProfileTab() {
   const { user } = useAuth();
@@ -55,7 +55,7 @@ function ProfileTab() {
     console.log(`[ProfileTab] User ${user.uid} selected new avatar: ${avatarId}`);
     setIsSaving(true);
     try {
-        await updateUserProfile(user.uid, { avatarId });
+        await updateUserProfileAction(user.uid, { avatarId });
         toast({
             title: "Avatar Updated!",
             description: "Your new avatar has been saved.",
@@ -209,7 +209,7 @@ function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
     fetchUsers();
   }, [fetchUsers]);
   
-  const handleUserAdded = () => {
+  const handleUserChanged = () => {
       console.log('[UserManagementTab] User added/changed, triggering refetch.');
       fetchUsers();
       onUsersChanged();
@@ -220,33 +220,38 @@ function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
   const UserListItem = ({ user }: { user: AppUser }) => {
     const UserAvatar = getAvatar(user.avatarId);
     return (
-        <div className={cn("flex items-start gap-4 p-4")}>
+        <div className="flex items-start gap-4 p-4">
             <Avatar className="mt-1">
                 {UserAvatar ? <UserAvatar /> : <AvatarFallback>{user.name ? user.name[0] : user.email?.[0].toUpperCase()}</AvatarFallback>}
             </Avatar>
-            <div className='flex-1 flex flex-col md:flex-row md:flex-wrap gap-x-4 gap-y-1'>
-                <div className="font-semibold text-lg md:w-full md:col-span-2">{user.name || 'No Name'}</div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground break-all">
-                    <Mail className="w-4 h-4 flex-shrink-0"/>
-                    <span>{user.email}</span>
+            <div className='flex-1 flex flex-col'>
+                 <div className="flex justify-between items-start">
+                    <div className="font-semibold text-lg">{user.name || 'No Name'}</div>
+                    <EditUserDialog user={user} onUserUpdated={handleUserChanged} />
                 </div>
-                 {user.role === 'child' && (
-                     <>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <GraduationCap className="w-4 h-4 flex-shrink-0"/>
-                            <span>{user.gradeLevel || 'N/A'}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="w-4 h-4 flex-shrink-0"/>
-                            <span>Born: {user.dateOfBirth ? format(new Date(user.dateOfBirth), 'PPP') : 'N/A'}</span>
-                        </div>
-                     </>
-                 )}
-                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <User className="w-4 h-4 flex-shrink-0"/>
-                    <p>
-                        Last Login: {user.lastLogin && user.lastLogin !== 'N/A' ? formatDistanceToNow(new Date(user.lastLogin), { addSuffix: true }) : 'Never'}
-                    </p>
+                <div className='flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground'>
+                    <div className="flex items-center gap-2 break-all">
+                        <Mail className="w-4 h-4 flex-shrink-0"/>
+                        <span>{user.email}</span>
+                    </div>
+                    {user.role === 'child' && (
+                        <>
+                            <div className="flex items-center gap-2">
+                                <GraduationCap className="w-4 h-4 flex-shrink-0"/>
+                                <span>{user.gradeLevel || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 flex-shrink-0"/>
+                                <span>Born: {user.dateOfBirth ? format(new Date(user.dateOfBirth), 'PPP') : 'N/A'}</span>
+                            </div>
+                        </>
+                    )}
+                    <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 flex-shrink-0"/>
+                        <p>
+                            Last Login: {user.lastLogin && user.lastLogin !== 'N/A' ? formatDistanceToNow(new Date(user.lastLogin), { addSuffix: true }) : 'Never'}
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -265,7 +270,7 @@ function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-medium flex items-center gap-2"><Users />Child Accounts</h3>
-            <AddChildDialog onChildAdded={handleUserAdded} />
+            <AddChildDialog onChildAdded={handleUserChanged} />
           </div>
           {isLoading ? (
              <div className="flex justify-center items-center p-4">
@@ -285,7 +290,7 @@ function UserManagementTab({ onUsersChanged }: { onUsersChanged: () => void }) {
         <div className="space-y-4">
            <div className="flex items-center justify-between">
             <h3 className="text-lg font-medium flex items-center gap-2"><Shield />Parent Accounts</h3>
-            <AddParentDialog onParentAdded={handleUserAdded} />
+            <AddParentDialog onParentAdded={handleUserChanged} />
           </div>
            {isLoading ? (
              <div className="flex justify-center items-center p-4">

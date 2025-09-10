@@ -109,7 +109,7 @@ export async function getUserByEmail(email: string): Promise<AppUser | null> {
     } as AppUser;
 }
 
-// Set parent for a child user and update profile data
+// Set parent for a child user
 export async function setUserParent(childUid: string, parentUid: string): Promise<void> {
     const userDocRef = db.collection('users').doc(childUid);
     await userDocRef.update({
@@ -117,9 +117,34 @@ export async function setUserParent(childUid: string, parentUid: string): Promis
     });
 }
 
-export async function updateUserProfile(uid: string, data: Partial<Pick<AppUser, 'gradeLevel' | 'dateOfBirth' | 'avatarId'>>): Promise<void> {
+export async function updateUserProfile(uid: string, data: Partial<AppUser>): Promise<void> {
     const userDocRef = db.collection('users').doc(uid);
-    await userDocRef.update(data);
+    const authUser = await auth.getUser(uid);
+
+    const updateData: Partial<AppUser> = {};
+    const authUpdateData: {email?: string, displayName?: string} = {};
+
+    if (data.email && data.email.toLowerCase() !== authUser.email) {
+        authUpdateData.email = data.email;
+        updateData.email = data.email.toLowerCase();
+    }
+
+    if (data.name && data.name !== authUser.displayName) {
+        authUpdateData.displayName = data.name;
+        updateData.name = data.name;
+    }
+
+    if (data.gradeLevel) updateData.gradeLevel = data.gradeLevel;
+    if (data.dateOfBirth) updateData.dateOfBirth = data.dateOfBirth;
+    if (data.avatarId) updateData.avatarId = data.avatarId;
+
+    if (Object.keys(authUpdateData).length > 0) {
+        await auth.updateUser(uid, authUpdateData);
+    }
+    
+    if (Object.keys(updateData).length > 0) {
+        await userDocRef.update(updateData);
+    }
 }
 
 
@@ -146,7 +171,7 @@ export async function getChildrenForParent(parentId: string): Promise<AppUser[]>
     return users;
 }
 
-// Get all parents/parents
+// Get all parents
 export async function getParents(): Promise<AppUser[]> {
     const users: AppUser[] = [];
     const q = db.collection('users').where('role', '==', 'parent');

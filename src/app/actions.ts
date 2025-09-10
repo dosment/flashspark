@@ -12,9 +12,6 @@ import {
     saveQuizAttempt as saveQuizAttemptToDb,
     setUserParent,
     getUserByEmail,
-    setUserRole,
-    getUserAchievements,
-    unlockAchievement,
     updateUserProfile,
     createUser,
 } from '@/lib/firestore';
@@ -158,7 +155,7 @@ export async function getManagedUsersAction() {
     const user = await getCurrentUser();
     if (!user || user.role !== 'parent') {
         console.error('[ACTION] getManagedUsersAction: Error - Not an parent or not logged in.');
-        return { error: 'You must be an parent to manage users.' };
+        return { error: 'You must be a parent to manage users.' };
     }
     try {
         console.log('[ACTION] getManagedUsersAction: Fetching children and parents for parent:', user.uid);
@@ -339,6 +336,3 @@ export async function updateUserProfileAction(uid: string, data: Partial<AppUser
         return { error: 'Failed to update profile.' };
     }
 }
-
-
-    
