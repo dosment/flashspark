@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -46,7 +45,7 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
   const quizId = params.topic as string;
   const { toast } = useToast();
 
-  const [studyMode, setStudyMode] = useState<StudyMode | null>(quizType === 'vocabulary' ? null : 'definition-first');
+  const [studyMode, setStudyMode] = useState<StudyMode | null>(quizType === 'vocabulary' ? 'definition-first' : 'definition-first');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -56,6 +55,7 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
   const [isHintLoading, setIsHintLoading] = useState(false);
   const [hintError, setHintError] = useState<string | null>(null);
   const [answeredFlashcards, setAnsweredFlashcards] = useState<AnsweredFlashcard[]>([]);
+  const [isStarted, setIsStarted] = useState(quizType !== 'vocabulary');
   
   const currentFlashcard = useMemo(() => {
       if (!studyMode) return null;
@@ -154,17 +154,18 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
     setHintError(null);
   };
   
-  const resetQuiz = (mode: StudyMode) => {
+  const startQuiz = (mode: StudyMode) => {
     setStudyMode(mode);
     setCurrentIndex(0);
     setScore(0);
     setQuizCompleted(false);
     resetQuestionState();
     setAnsweredFlashcards([]);
+    setIsStarted(true);
   }
 
   const handlePlayAgain = () => {
-    setStudyMode(quizType === 'vocabulary' ? null : 'definition-first');
+    setIsStarted(quizType !== 'vocabulary');
     setCurrentIndex(0);
     setScore(0);
     setQuizCompleted(false);
@@ -233,20 +234,22 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
     saveAttempt();
   }, [quizCompleted, user, quizId, topic, score, flashcards.length, toast, answeredFlashcards]);
 
-  if (quizType === 'vocabulary' && !studyMode) {
+  if (!isStarted) {
     return (
       <div className="container mx-auto max-w-2xl py-8 md:py-12">
         <Card className="w-full shadow-lg">
           <CardHeader>
-            <CardTitle className="text-2xl font-headline">Choose Your Study Mode</CardTitle>
+            <CardTitle className="text-2xl font-headline">{topic}</CardTitle>
             <CardDescription>How would you like to study these flashcards?</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-              <Button size="lg" className="w-full" onClick={() => resetQuiz('definition-first')}>
-                Definition First
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Button size="lg" className="h-auto py-4" onClick={() => startQuiz('definition-first')}>
+                Start with Definition
+                <p className="font-normal text-sm text-primary-foreground/80 block w-full">You'll be shown the definition and asked to choose the correct term.</p>
               </Button>
-              <Button size="lg" className="w-full" onClick={() => resetQuiz('term-first')}>
-                Term First
+              <Button size="lg" className="h-auto py-4" onClick={() => startQuiz('term-first')}>
+                Start with Term
+                <p className="font-normal text-sm text-primary-foreground/80 block w-full">You'll be shown the term and asked to choose the correct definition.</p>
               </Button>
           </CardContent>
         </Card>
@@ -400,5 +403,3 @@ export function QuizClient({ flashcards, topic, quizType }: QuizClientProps) {
     </div>
   );
 }
-
-    

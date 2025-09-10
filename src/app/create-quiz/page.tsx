@@ -94,6 +94,7 @@ function CreateQuizPageContent() {
           ...(age && { age }),
       });
       setFlashcards(result.flashcards);
+      setActiveView('manual'); // Hide generation UI
       toast({ title: "AI Complete!", description: `Generated ${result.flashcards.length} flashcards about ${aiTopic}.` });
     } catch (error) {
       console.error("Failed to generate flashcards", error);
@@ -115,6 +116,7 @@ function CreateQuizPageContent() {
           numFlashcards: 10,
       });
       setFlashcards(result.flashcards);
+      setActiveView('manual'); // Hide generation UI
       toast({ title: "AI Complete!", description: `Generated ${result.flashcards.length} flashcards from your text.` });
     } catch (error) {
       console.error("Failed to generate flashcards from text", error);
@@ -170,7 +172,7 @@ function CreateQuizPageContent() {
       <main className="container mx-auto px-4 py-8 md:py-12">
         <section className="max-w-4xl mx-auto">
             <div className="flex justify-center mb-8 gap-2 flex-wrap">
-                <Button variant={activeView === 'manual' ? 'default' : 'outline'} onClick={() => setActiveView('manual')}>Create Manually</Button>
+                <Button variant={activeView === 'manual' && flashcards.length === 0 ? 'default' : 'outline'} onClick={() => setActiveView('manual')}>Create Manually</Button>
                 <Button variant={activeView === 'aiTopic' ? 'default' : 'outline'} onClick={() => {setActiveView('aiTopic'); setQuizType('vocabulary')}}>Generate from Topic</Button>
                 <Button variant={activeView === 'aiText' ? 'default' : 'outline'} onClick={() => {setActiveView('aiText'); setQuizType('standard')}}>Generate from Text</Button>
             </div>
@@ -228,7 +230,7 @@ function CreateQuizPageContent() {
             </Card>
           )}
           
-          {activeView === 'manual' && (
+          {activeView === 'manual' && flashcards.length === 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-2xl font-headline">Create Your Custom Quiz</CardTitle>
