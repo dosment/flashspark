@@ -38,34 +38,36 @@ const getQuizIcon = (quizType: QuizType, title: string) => {
 function AdminDashboard({ user }: { user: AppUser }) {
     const [children, setChildren] = useState<ChildWithAttempts[]>([]);
     const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-    const [isFetching, setIsFetching] = useState(true);
+    const [isFetchingQuizzes, setIsFetchingQuizzes] = useState(true);
+    const [isFetchingChildren, setIsFetchingChildren] = useState(true);
     const { toast } = useToast();
 
-    const fetchDashboardData = useCallback(async () => {
-        setIsFetching(true);
-        const [dashboardResult, quizzesResult] = await Promise.all([
-            getDashboardDataAction(),
-            getQuizzesAction()
-        ]);
-        
-        if (dashboardResult.children) {
-            setChildren(dashboardResult.children);
-        } else if (dashboardResult.error) {
-            toast({ variant: 'destructive', title: 'Error', description: dashboardResult.error });
+    const fetchQuizzes = useCallback(async () => {
+        setIsFetchingQuizzes(true);
+        const result = await getQuizzesAction();
+        if (result.quizzes) {
+            setQuizzes(result.quizzes);
+        } else if (result.error) {
+            toast({ variant: 'destructive', title: 'Error', description: result.error });
         }
+        setIsFetchingQuizzes(false);
+    }, [toast]);
 
-        if (quizzesResult.quizzes) {
-            setQuizzes(quizzesResult.quizzes);
-        } else if (quizzesResult.error) {
-            toast({ variant: 'destructive', title: 'Error', description: quizzesResult.error });
+    const fetchChildren = useCallback(async () => {
+        setIsFetchingChildren(true);
+        const result = await getDashboardDataAction();
+        if (result.children) {
+            setChildren(result.children);
+        } else if (result.error) {
+            toast({ variant: 'destructive', title: 'Error', description: result.error });
         }
-
-        setIsFetching(false);
+        setIsFetchingChildren(false);
     }, [toast]);
 
     useEffect(() => {
-        fetchDashboardData();
-    }, [fetchDashboardData]);
+        fetchQuizzes();
+        fetchChildren();
+    }, [fetchQuizzes, fetchChildren]);
     
     return (
         <div className="space-y-12">
@@ -73,7 +75,7 @@ function AdminDashboard({ user }: { user: AppUser }) {
                 <div className="flex justify-between items-center mb-4">
                     <h1 className="text-3xl font-bold font-headline">My Quizzes</h1>
                 </div>
-                 {isFetching ? (
+                 {isFetchingQuizzes ? (
                      <div className="text-center"><LoaderCircle className="w-8 h-8 animate-spin text-primary mx-auto" /></div>
                 ) : quizzes.length === 0 ? (
                      <Card className="text-center py-12">
@@ -116,11 +118,11 @@ function AdminDashboard({ user }: { user: AppUser }) {
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-3xl font-bold font-headline">Child Activity</h2>
                     <div className="flex gap-2">
-                        <AddChildDialog onChildAdded={fetchDashboardData} />
+                        <AddChildDialog onChildAdded={fetchChildren} />
                         <AddParentDialog onParentAdded={() => {}} />
                     </div>
                 </div>
-                 {isFetching ? (
+                 {isFetchingChildren ? (
                     <div className="text-center">
                         <LoaderCircle className="w-8 h-8 animate-spin text-primary mx-auto" />
                     </div>
@@ -131,7 +133,7 @@ function AdminDashboard({ user }: { user: AppUser }) {
                             <CardDescription>Click the button to add your first child and see their progress.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <AddChildDialog onChildAdded={fetchDashboardData} />
+                            <AddChildDialog onChildAdded={fetchChildren} />
                         </CardContent>
                     </Card>
                 ) : (
@@ -319,5 +321,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
