@@ -95,7 +95,16 @@ export const encouragement = {
         "You're a kingdom of knowledge!",
         "You're an empire of excellence!",
         "You're a universe of understanding!",
-        "You're a dimension of distinction!"
+        "You're a dimension of distinction!",
+        "Are you a 90-degree angle? Because that was right!",
+        "You're not a photographer, but you pictured success and made it happen!",
+        "That was a tree-mendous performance! You're unbe-leaf-able!",
+        "You're so good, it's scary! You must be a 'boo-rilliant' student.",
+        "This performance was bussin'! No cap.",
+        "You ate that quiz and left no crumbs. Slay!",
+        "That was a glow up for your brain. It's giving... genius.",
+        "Big W. You understood the assignment.",
+        "Bet. You're goated."
     ],
     good: [
         "Great job! You're really getting the hang of this.",
@@ -194,7 +203,13 @@ export const encouragement = {
         "You're a sir of success.",
         "You're a dame of distinction.",
         "You're a knight of knowledge.",
-        "You're a squire of smarts."
+        "You're a squire of smarts.",
+        "Lettuce celebrate this great score!",
+        "You're one smart cookie! Keep up the good work.",
+        "You did a grape job! Keep it up!",
+        "That was pretty lit. You're getting the hang of it.",
+        "The vibes are immaculate. Good job.",
+        "You're in your learning era, and it's iconic."
     ],
     keepTrying: [
         "Don't give up! Every mistake is a step forward.",
@@ -293,7 +308,13 @@ export const encouragement = {
         "You've got the trade of a tradesman.",
         "You've got the profession of a professional.",
         "You've got the calling of a career.",
-        "You've got the vocation of a virtuoso."
+        "You've got the vocation of a virtuoso.",
+        "Don't be salty about the score! You'll do better next time.",
+        "Taco 'bout a comeback! Your next attempt will be amazing.",
+        "This is just the first draft. The final version will be a masterpiece.",
+        "It's giving... main character in a training arc.",
+        "This ain't it, chief, but the next one will be.",
+        "It's a canon event, you have to struggle before you succeed."
     ],
 };
 
