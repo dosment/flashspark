@@ -51,7 +51,7 @@ export default function Header() {
                         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                           <Avatar className="h-10 w-10">
                             {UserAvatar ? (
-                              <UserAvatar />
+                              <UserAvatar className="w-full h-full" />
                             ) : (
                               <AvatarFallback>
                                 {user.email?.charAt(0).toUpperCase()}
@@ -104,7 +104,7 @@ export default function Header() {
                        <Link href="/profile">
                           <Avatar className="h-10 w-10">
                             {UserAvatar ? (
-                              <UserAvatar />
+                              <UserAvatar className="w-full h-full" />
                             ) : (
                               <AvatarFallback>
                                 {user.email?.charAt(0).toUpperCase()}
